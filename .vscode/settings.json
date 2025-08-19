@@ -1,9 +1,14 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\adars\\anaconda3\\envs\\medicure-ai\\python.exe",
-  "jupyter.interactiveWindow.kernelSelection": "Python 3.10.0",
-  "jupyter.notebook.defaultKernel": "Python 3.10.18",
-  "terminal.integrated.env.windows": {
-    "CONDA_DEFAULT_ENV": "medicure-ai"
-  }
+  "terminal.integrated.profiles.windows": {
+    "PowerShell (Conda Medicure-AI)": {
+      "path": "powershell.exe",
+      "args": [
+        "-NoExit",
+        "-Command",
+        "conda activate medicure-ai"
+      ]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell (Conda Medicure-AI)"
 }
-
