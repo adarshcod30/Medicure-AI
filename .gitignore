@@ -1,0 +1,10 @@
+/data/raw/
+/data/processed/
+*.csv
+*.pdf
+__pycache__/
+.env
+.venv
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
