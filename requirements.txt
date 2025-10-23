@@ -1,0 +1,17 @@
+torch
+torchvision
+torchaudio
+transformers
+scikit-learn
+scipy
+pandas
+numpy
+matplotlib
+seaborn
+opencv-python
+tqdm
+jupyter
+notebook
+pillow
+pytesseract
+rapidfuzz
