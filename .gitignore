@@ -1,10 +1,25 @@
-/data/raw/
-/data/processed/
-*.csv
-*.pdf
+# Node.js
+node_modules/
+backend/uploads/
+backend/database.sqlite
+backend/database.sqlite-journal
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# React Vite
+frontend/dist/
+frontend/node_modules/
+frontend/.eslintcache
+
+# Env
 .env
-.venv
+
+# OS
 .DS_Store
-.vscode/
-.ipynb_checkpoints/
+Thumbs.db

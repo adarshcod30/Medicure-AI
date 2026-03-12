@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run merge_datasets",
+      "type": "shell",
+      "command": "python scripts/merge/merge_datasets.py",
+      "group": "build",
+      "presentation": { "reveal": "always" }
+    }
+  ]
+}

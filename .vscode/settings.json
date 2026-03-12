@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "/opt/homebrew/Caskroom/miniforge/latest/envs/medicure-ai/bin/python",
+  "python.analysis.autoImportCompletions": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "editor.formatOnSave": true
+}
