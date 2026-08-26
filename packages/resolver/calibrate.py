@@ -303,6 +303,22 @@ def build_training_data(
         if not record.signature:
             continue
 
+        # An uncorrupted query, alongside the damaged ones. Training only on
+        # corrupted input teaches the calibrator that clean input does not
+        # exist: typing an exact brand name into the search box was scoring
+        # P=0.69 and landing in "ambiguous", because nothing in the training
+        # distribution ever matched that well. Users type names correctly far
+        # more often than OCR reads them correctly.
+        clean_queries = [record.name, f"{record.name} {record.composition}".strip()]
+
+        for query in clean_queries:
+            if not query.strip():
+                continue
+            matches = index.search_compositions(query, top_k=5)
+            features.append(extract_features(matches, query))
+            labels.append(int(bool(matches) and matches[0].signature == record.signature))
+            queries.append(query)
+
         for profile in profiles:
             name_part = corrupt(record.name, profile, rng)
             composition_part = corrupt(record.composition, profile, rng)
