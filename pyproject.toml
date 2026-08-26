@@ -32,6 +32,9 @@ dependencies = [
 
     # --- AWS / Bedrock ---
     "boto3>=1.35.0",
+    # botocore[crt] is required by the `aws login` credential provider; without
+    # it, client construction fails with MissingDependencyException.
+    "botocore[crt]>=1.35.0",
 
     # --- Storage ---
     "motor>=3.6.0",

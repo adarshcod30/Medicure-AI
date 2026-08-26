@@ -14,7 +14,7 @@ import logging
 
 from packages.orchestrator import Orchestrator
 from packages.pharmacology.price import CeilingPriceTable
-from packages.reasoning.bedrock import BedrockClient, BedrockUnavailable
+from packages.reasoning.bedrock import BedrockClient
 from packages.reasoning.explainer import Explainer
 from packages.resolver.calibrate import Calibrator, load_or_default
 from packages.resolver.index import BrandIndex
@@ -77,10 +77,15 @@ class AppState:
                 )
                 explainer = Explainer(self.bedrock)
                 logger.info("bedrock explainer enabled (%s)", settings.bedrock_fast_model_id)
-            except BedrockUnavailable as exc:
-                # Not fatal. Every load-bearing capability is deterministic;
-                # losing Bedrock costs the prose, not the answer.
-                self.startup_errors.append(f"bedrock unavailable: {exc}")
+            except Exception as exc:  # noqa: BLE001
+                # Never fatal, and the catch is deliberately broad. Every
+                # load-bearing capability is deterministic, so losing Bedrock
+                # costs the prose and nothing else. A narrower catch let a
+                # botocore MissingDependencyException escape and abort startup,
+                # which took down retrieval, price checks and abstention over a
+                # missing optional package.
+                kind = type(exc).__name__
+                self.startup_errors.append(f"bedrock unavailable ({kind}): {exc}")
                 logger.warning("bedrock unavailable, continuing without explanations: %s", exc)
 
         self.orchestrator = Orchestrator(

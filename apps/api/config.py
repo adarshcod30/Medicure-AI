@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     fails at first invocation rather than at startup. The `us.` prefix selects a
     cross-region inference profile for higher throughput."""
 
-    bedrock_fast_model_id: str = "us.anthropic.claude-haiku-4-5-20251001"
+    bedrock_fast_model_id: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
     """Cheaper model for simplification and routing, where the reasoning is
     trivial but the volume is high."""
 

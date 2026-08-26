@@ -24,18 +24,30 @@ def health() -> dict:
     state = get_state()
     settings = get_settings()
 
+    bedrock_health = state.bedrock.health() if state.bedrock else None
+
+    # `explanations` is False until an invocation has actually succeeded. A
+    # constructed client proves nothing — an account without a valid payment
+    # instrument builds one fine and then fails every call.
     capabilities = {
         "retrieval": state.index is not None,
         "calibrated_confidence": bool(state.calibrator and state.calibrator.is_fitted),
         "price_verification": state.ceiling_table is not None,
-        "explanations": state.bedrock is not None,
+        "explanations": bool(bedrock_health and bedrock_health["last_invocation_succeeded"]),
     }
+
+    degraded = list(state.startup_errors)
+    if bedrock_health and bedrock_health["last_invocation_succeeded"] is False:
+        degraded.append(f"bedrock: {bedrock_health['last_error']}")
+    elif bedrock_health and bedrock_health["last_invocation_succeeded"] is None:
+        degraded.append("bedrock: client constructed but not yet invoked")
 
     return {
         "status": "ok" if state.ready else "not_ready",
         "ready": state.ready,
         "capabilities": capabilities,
-        "degraded": state.startup_errors,
+        "degraded": degraded,
+        "bedrock": bedrock_health,
         "environment": settings.environment,
     }
 

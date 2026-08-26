@@ -115,15 +115,39 @@ class BedrockClient:
         self.guardrail_id = guardrail_id
         self.guardrail_version = guardrail_version
 
-        self._client = boto3.client(
-            "bedrock-runtime",
-            region_name=region,
-            config=Config(
-                retries={"max_attempts": 4, "mode": "adaptive"},
-                connect_timeout=5,
-                read_timeout=60,
-            ),
-        )
+        # Invocation outcome, so health reporting can distinguish "a client was
+        # constructed" from "the model can actually be called". They are not
+        # the same: an account with no valid payment instrument builds a client
+        # happily and then fails every Converse with AccessDeniedException.
+        # Reporting the first as a working capability is the kind of green
+        # dashboard that hides an outage.
+        self.last_error: str | None = None
+        self.last_success: bool | None = None
+
+        # Every construction failure becomes BedrockUnavailable, deliberately.
+        #
+        # boto3 raises a wide and not-fully-enumerable set of exceptions here:
+        # NoCredentialsError, ProfileNotFound, NoRegionError, and — encountered
+        # in practice — MissingDependencyException, because the `aws login`
+        # credential provider needs botocore[crt] and says so only at client
+        # construction. Catching a curated list let that one escape and take
+        # the whole service down at startup, which is precisely the opposite of
+        # the design: identification, price checks and abstention are all
+        # deterministic and must keep working when the LLM layer does not.
+        try:
+            self._client = boto3.client(
+                "bedrock-runtime",
+                region_name=region,
+                config=Config(
+                    retries={"max_attempts": 4, "mode": "adaptive"},
+                    connect_timeout=5,
+                    read_timeout=60,
+                ),
+            )
+        except Exception as exc:  # noqa: BLE001 - see above
+            raise BedrockUnavailable(
+                f"could not create bedrock-runtime client: {type(exc).__name__}: {exc}"
+            ) from exc
 
     # --- guardrail config -------------------------------------------------
 
@@ -202,10 +226,26 @@ class BedrockClient:
             response = self._client.converse(**request)
         except Exception as exc:  # noqa: BLE001
             code = getattr(exc, "response", {}).get("Error", {}).get("Code", "")
+            self.last_success = False
+            self.last_error = f"{code or type(exc).__name__}: {str(exc)[:240]}"
+
+            if "INVALID_PAYMENT_INSTRUMENT" in str(exc):
+                # Worth naming explicitly: this is an AWS billing state, not a
+                # Bedrock permission or a model-access setting, and hunting for
+                # it in IAM policies wastes a lot of time.
+                self.last_error = (
+                    "AWS account has no valid payment instrument. This is a billing "
+                    "setting, not a Bedrock permission — add a payment method to the "
+                    "account, then retry."
+                )
+
             if code in PERMANENT:
-                raise BedrockUnavailable(f"{code}: {exc}") from exc
+                raise BedrockUnavailable(self.last_error) from exc
             logger.warning("bedrock converse failed (%s): %s", code or type(exc).__name__, exc)
-            raise BedrockUnavailable(str(exc)) from exc
+            raise BedrockUnavailable(self.last_error) from exc
+
+        self.last_success = True
+        self.last_error = None
 
         latency = (time.perf_counter() - started) * 1000
 
@@ -246,13 +286,21 @@ class BedrockClient:
         }
 
     def health(self) -> dict:
-        """Cheap reachability check for `/v1/health`."""
-        try:
-            control = boto3.client("bedrock", region_name=self.region)
-            control.list_foundation_models(byProvider="anthropic")
-            return {"reachable": True, "region": self.region, "model": self.model_id}
-        except Exception as exc:  # noqa: BLE001
-            return {"reachable": False, "region": self.region, "error": str(exc)[:200]}
+        """Capability report for `/v1/health`.
+
+        Reports the outcome of the last real invocation rather than probing,
+        because a probe on every health check costs tokens and a probe at
+        startup goes stale immediately.
+        """
+        return {
+            "client_constructed": True,
+            "region": self.region,
+            "model": self.model_id,
+            "fast_model": self.fast_model_id,
+            "guardrail": bool(self.guardrail_id),
+            "last_invocation_succeeded": self.last_success,
+            "last_error": self.last_error,
+        }
 
 
 def parse_json_response(text: str) -> dict | None:
