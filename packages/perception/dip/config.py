@@ -196,8 +196,35 @@ class DipConfig:
         )
 
     @classmethod
+    def light(cls) -> DipConfig:
+        """Geometry correction, minimal photometric work, no rendition fan-out.
+
+        The right choice for a well-exposed photo taken at an angle. Quality
+        metrics measure exposure, focus and glare — they say nothing about
+        perspective — so a "good" image can still badly need rectifying. What it
+        does *not* need is a fan-out of binarisations: measured on clean input,
+        the full fan-out cut token precision from 1.00 to 0.29 because the extra
+        renditions contributed only noise. Restore the geometry, leave the
+        photometry alone.
+        """
+        return cls(
+            denoise_method="bilateral",
+            remove_glare=True,
+            normalize_illumination=False,
+            clahe=True,
+            detect_boundary=True,
+            rectify=True,
+            deskew=True,
+            tophat=False,
+            binarize_methods=("sauvola",),
+            rotations=(0,),
+            max_renditions=2,
+            text_detection=False,
+        )
+
+    @classmethod
     def full(cls) -> DipConfig:
-        """Everything on. The default for a user-submitted scan."""
+        """Everything on. For degraded input, where recall is worth the noise."""
         return cls()
 
     @classmethod

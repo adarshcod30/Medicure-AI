@@ -364,3 +364,38 @@ def test_dump_stages_captures_intermediates():
 
     assert len(result.stages) > 5
     assert any("rendition" in k for k in result.stages)
+
+
+# --- adaptive routing -----------------------------------------------------
+
+
+def test_auto_routes_clean_and_degraded_images_differently():
+    """The whole point of `run_auto` is that one pipeline does not fit both.
+
+    Measured token F1 inverts between the two cases — full processing scores
+    0.70 on clean input against 0.93 for no processing, and 0.46 against 0.21 on
+    degraded input — so routing to the same preset for both would take the wrong
+    half of that trade on every image.
+    """
+    from packages.perception.dip.pipeline import run_auto
+
+    clean = run_auto(synthetic.encode(synthetic.make_strip()))
+    degraded = run_auto(synthetic.encode(synthetic.degraded_strip()[0]))
+
+    assert clean.metrics["auto_preset"] != degraded.metrics["auto_preset"]
+    assert clean.metrics["auto_preset"] == "light"
+
+
+def test_auto_probe_agrees_with_the_reported_verdict():
+    """Regression test: the routing probe and the reported quality must match.
+
+    The probe originally ran on the raw decode while `run` measured after
+    denoising, so a noisy image probed "degraded", routed to the light pipeline,
+    then reported "poor" — routing on a number the user never sees.
+    """
+    from packages.perception.dip.pipeline import run_auto, select_config
+
+    result = run_auto(synthetic.encode(synthetic.degraded_strip()[0]))
+    expected, expected_name = select_config(result.quality)
+
+    assert result.metrics["auto_preset"] == expected_name

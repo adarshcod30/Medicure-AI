@@ -314,6 +314,60 @@ def run(image: bytes | np.ndarray, config: DipConfig | None = None) -> DipResult
     )
 
 
+def select_config(quality: QualityReport) -> tuple[DipConfig, str]:
+    """Choose a DIP preset from measured image quality.
+
+    There is no single best pipeline, and this was measured rather than assumed.
+    On clean input the full pipeline is actively harmful — token F1 of 0.70
+    against 0.93 for no processing at all — because there is nothing to restore
+    and the rendition fan-out only contributes noise. On degraded input the
+    ranking inverts: 0.46 against 0.21. Running one fixed configuration means
+    accepting the wrong half of that trade on every image.
+
+    Note what quality does *not* measure: perspective. A perfectly exposed,
+    perfectly focused photo taken at 30 degrees scores "good" while still badly
+    needing rectification. That is why the "good" branch selects `light` rather
+    than `raw` — geometry correction always runs, and only the photometric
+    fan-out is skipped.
+
+    These thresholds are fitted to synthetic images and should be refitted
+    against the real photo set; `eval/bench_ocr.py` produces exactly the table
+    needed to do that.
+    """
+    if quality.verdict == "good":
+        return DipConfig.light(), "light"
+    if quality.verdict == "degraded":
+        return DipConfig.fast(), "fast"
+    return DipConfig.full(), "full"
+
+
+def run_auto(image: bytes | np.ndarray, *, dump_stages: bool = False) -> DipResult:
+    """Assess quality cheaply, then run the preset that suits the image.
+
+    The probe costs one decode plus three cheap measurements, which is far less
+    than the fan-out it avoids on a clean photo.
+    """
+    decoded = acquire.decode(image) if isinstance(image, bytes) else image
+    bounded, _ = acquire.limit_resolution(decoded, DipConfig().max_dimension)
+
+    # Denoise before probing, matching what `run` does before it measures.
+    # Probing the raw decode instead gives a different verdict than the one the
+    # response ends up reporting — sensor noise inflates the Laplacian variance,
+    # so a blurred-but-noisy photo probes as merely "degraded" and then reports
+    # "poor" after denoising. The routing decision and the number shown to the
+    # user have to come from the same image.
+    probed, _ = denoise.apply(bounded, "auto")
+
+    probe = assess(acquire.ensure_bgr(probed))
+    config, name = select_config(probe)
+    if dump_stages:
+        config = config.with_(dump_stages=True)
+
+    result = run(bounded, config)
+    result.metrics["auto_preset"] = name
+    return result
+
+
 # --- CLI ------------------------------------------------------------------
 # `python -m packages.perception.dip.pipeline --image strip.jpg --dump-stages out/`
 # is the fastest way to confirm the DIP work is real: it writes every
@@ -327,9 +381,9 @@ def _cli(argv: list[str] | None = None) -> int:
     parser.add_argument("--dump-stages", type=Path, help="directory to write intermediates to")
     parser.add_argument(
         "--preset",
-        default="full",
-        choices=["raw", "fast", "full", "foil"],
-        help="DipConfig preset",
+        default="auto",
+        choices=["auto", "raw", "light", "fast", "full", "foil"],
+        help="DipConfig preset (auto selects from measured quality)",
     )
     args = parser.parse_args(argv)
 
@@ -337,19 +391,22 @@ def _cli(argv: list[str] | None = None) -> int:
         print(f"error: {args.image} not found", file=sys.stderr)
         return 1
 
-    config = {
-        "raw": DipConfig.raw,
-        "fast": DipConfig.fast,
-        "full": DipConfig.full,
-        "foil": DipConfig.foil,
-    }[args.preset]()
+    if args.preset == "auto":
+        result = run_auto(args.image.read_bytes(), dump_stages=bool(args.dump_stages))
+    else:
+        config = {
+            "raw": DipConfig.raw,
+            "light": DipConfig.light,
+            "fast": DipConfig.fast,
+            "full": DipConfig.full,
+            "foil": DipConfig.foil,
+        }[args.preset]()
+        if args.dump_stages:
+            config = config.with_(dump_stages=True)
+        result = run(args.image.read_bytes(), config)
 
-    if args.dump_stages:
-        config = config.with_(dump_stages=True)
-
-    result = run(args.image.read_bytes(), config)
-
-    print(f"preset          : {args.preset}")
+    print(f"preset          : {args.preset}"
+          + (f" -> {result.metrics['auto_preset']}" if "auto_preset" in result.metrics else ""))
     print(f"elapsed         : {result.elapsed_ms:.0f} ms")
     print(f"verdict         : {result.quality.verdict}")
     print(f"blur variance   : {result.quality.blur_variance:.1f}")
