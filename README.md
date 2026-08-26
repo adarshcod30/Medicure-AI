@@ -71,12 +71,17 @@ On **12 real phone photographs** of Indian medicine packaging — one upside
 down, four rotated 90°, two badly crumpled, two bilingual, one held in a hand
 on a curved tin:
 
-| | Real phone photos |
-|---|---|
-| Ingredient hit @1 | 5 / 11 representable |
-| Answered | 3 / 12 |
-| **Silent failure** | **0 / 12** |
-| Orientation corrected | 6 / 12 |
+| | Phone photos | Web product shots |
+|---|---|---|
+| Images | 12 | 16 |
+| Ingredient hit @1 | 5 / 11 (45%) | 7 / 16 (44%) |
+| Answered | 3 / 12 | 5 / 16 |
+| **Silent failure** | **0 / 12** | **0 / 16** |
+| Orientation corrected | 6 / 12 | 1 / 16 |
+
+Scored separately, never pooled. Studio product photography is a far easier
+distribution than a phone photo of a torn strip, and one averaged number would
+describe neither.
 
 Both confident answers were correct (cefixime + ofloxacin; beclomethasone +
 neomycin). Every failure was an abstention, not a wrong answer given

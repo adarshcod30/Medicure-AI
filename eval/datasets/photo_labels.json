@@ -3,29 +3,404 @@
   "_labelling": "Each label is the composition printed on the pack. 'expect' is the ingredient set that must appear in the predicted composition for a hit. Brand is recorded for reference but is not what the system is scored on -- see BrandIndex.search_compositions for why composition rather than brand is the unit.",
   "_defects": "Recorded per image so failures can be attributed to a cause rather than averaged away.",
   "photos": [
-    {"file": "photo_01.jpg", "brand": "Montiget / Montelukast + Levocetirizine",
-     "expect": ["montelukast", "levocetirizine"], "defects": ["upside_down", "torn", "dark_background", "angled"]},
-    {"file": "photo_02.jpg", "brand": "Combiflam",
-     "expect": ["ibuprofen", "paracetamol"], "defects": ["crumpled", "torn", "glare", "angled"]},
-    {"file": "photo_03.jpg", "brand": "Electrocare ORS",
-     "expect": ["oral rehydration", "sodium chloride", "dextrose"], "defects": ["sachet", "bilingual", "creased", "non_tablet"]},
-    {"file": "photo_04.jpg", "brand": "Double Relax SP-10",
-     "expect": ["aceclofenac", "paracetamol", "serratiopeptidase"], "defects": ["rotated_90", "foil_back", "small_print"]},
-    {"file": "photo_05.jpg", "brand": "Belladonna Plaster (Ayurvedic)",
-     "expect": ["belladonna"], "defects": ["bilingual", "paper", "non_tablet", "ayurvedic"]},
-    {"file": "photo_06.jpg", "brand": "Beclomethasone + Neomycin + Clotrimazole cream",
-     "expect": ["beclomethasone", "neomycin"], "defects": ["rotated_90", "carton", "narrow_face"]},
-    {"file": "photo_07.jpg", "brand": "unidentified foil strip",
-     "expect": [], "defects": ["rotated_90", "foil_back", "vertical_text", "unlabelled"]},
-    {"file": "photo_08.jpg", "brand": "Nostrosil nasal drops",
-     "expect": ["xylometazoline"], "defects": ["carton", "glossy", "non_tablet"]},
-    {"file": "photo_09.jpg", "brand": "Pantoprazole prolonged release",
-     "expect": ["pantoprazole"], "defects": ["badly_crumpled", "textured_background", "torn"]},
-    {"file": "photo_10.jpg", "brand": "Crocin Advance",
-     "expect": ["paracetamol"], "defects": ["dense_fine_print", "strip_back"]},
-    {"file": "photo_11.jpg", "brand": "Vicks VapoRub",
-     "expect": ["camphor", "menthol", "eucalyptus"], "defects": ["hand_held", "circular_tin", "curved_surface", "non_tablet"]},
-    {"file": "photo_12.jpg", "brand": "Cefixime + Ofloxacin / Nimesulide + Paracetamol",
-     "expect": ["cefixime", "ofloxacin"], "defects": ["rotated_90", "multiple_strips", "foil_back"]}
-  ]
+    {
+      "file": "photo_01.jpg",
+      "brand": "Montiget / Montelukast + Levocetirizine",
+      "expect": [
+        "montelukast",
+        "levocetirizine"
+      ],
+      "defects": [
+        "upside_down",
+        "torn",
+        "dark_background",
+        "angled"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_02.jpg",
+      "brand": "Combiflam",
+      "expect": [
+        "ibuprofen",
+        "paracetamol"
+      ],
+      "defects": [
+        "crumpled",
+        "torn",
+        "glare",
+        "angled"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_03.jpg",
+      "brand": "Electrocare ORS",
+      "expect": [
+        "oral rehydration",
+        "sodium chloride",
+        "dextrose"
+      ],
+      "defects": [
+        "sachet",
+        "bilingual",
+        "creased",
+        "non_tablet"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_04.jpg",
+      "brand": "Double Relax SP-10",
+      "expect": [
+        "aceclofenac",
+        "paracetamol",
+        "serratiopeptidase"
+      ],
+      "defects": [
+        "rotated_90",
+        "foil_back",
+        "small_print"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_05.jpg",
+      "brand": "Belladonna Plaster (Ayurvedic)",
+      "expect": [
+        "belladonna"
+      ],
+      "defects": [
+        "bilingual",
+        "paper",
+        "non_tablet",
+        "ayurvedic"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_06.jpg",
+      "brand": "Beclomethasone + Neomycin + Clotrimazole cream",
+      "expect": [
+        "beclomethasone",
+        "neomycin"
+      ],
+      "defects": [
+        "rotated_90",
+        "carton",
+        "narrow_face"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_07.jpg",
+      "brand": "unidentified foil strip",
+      "expect": [],
+      "defects": [
+        "rotated_90",
+        "foil_back",
+        "vertical_text",
+        "unlabelled"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_08.jpg",
+      "brand": "Nostrosil nasal drops",
+      "expect": [
+        "xylometazoline"
+      ],
+      "defects": [
+        "carton",
+        "glossy",
+        "non_tablet"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_09.jpg",
+      "brand": "Pantoprazole prolonged release",
+      "expect": [
+        "pantoprazole"
+      ],
+      "defects": [
+        "badly_crumpled",
+        "textured_background",
+        "torn"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_10.jpg",
+      "brand": "Crocin Advance",
+      "expect": [
+        "paracetamol"
+      ],
+      "defects": [
+        "dense_fine_print",
+        "strip_back"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_11.jpg",
+      "brand": "Vicks VapoRub",
+      "expect": [
+        "camphor",
+        "menthol",
+        "eucalyptus"
+      ],
+      "defects": [
+        "hand_held",
+        "circular_tin",
+        "curved_surface",
+        "non_tablet"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    },
+    {
+      "file": "photo_12.jpg",
+      "brand": "Cefixime + Ofloxacin / Nimesulide + Paracetamol",
+      "expect": [
+        "cefixime",
+        "ofloxacin"
+      ],
+      "defects": [
+        "rotated_90",
+        "multiple_strips",
+        "foil_back"
+      ],
+      "dir": "photos",
+      "source": "phone_capture"
+    }
+  ],
+  "web": [
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_04.jpeg",
+      "brand": "Civoflox-200",
+      "expect": [
+        "ofloxacin"
+      ],
+      "defects": [
+        "carton_and_strip",
+        "angled"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_06.jpeg",
+      "brand": "Doxepin Hydrochloride Capsules IP 25mg",
+      "expect": [
+        "doxepin"
+      ],
+      "defects": [
+        "studio",
+        "carton_and_strip"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_07.jpeg",
+      "brand": "Esomet-DSR",
+      "expect": [
+        "esomeprazole",
+        "domperidone"
+      ],
+      "defects": [
+        "studio",
+        "small_print"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_09.jpeg",
+      "brand": "Aezit-250",
+      "expect": [
+        "azithromycin"
+      ],
+      "defects": [
+        "studio",
+        "carton_only"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_11.jpeg",
+      "brand": "Tapivit (Lamivudine 150mg)",
+      "expect": [
+        "lamivudine"
+      ],
+      "defects": [
+        "studio"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_12.jpeg",
+      "brand": "Panam Mite",
+      "expect": [
+        "amiloride",
+        "chlorthalidone"
+      ],
+      "defects": [
+        "studio",
+        "small_print"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_13.jpeg",
+      "brand": "Pacimol 650",
+      "expect": [
+        "paracetamol"
+      ],
+      "defects": [
+        "watermarked",
+        "cluttered",
+        "multiple_products"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_15.jpeg",
+      "brand": "Taspodol ER 200",
+      "expect": [
+        "tapentadol"
+      ],
+      "defects": [
+        "carton_and_strip"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_16.jpeg",
+      "brand": "Dasophil 20",
+      "expect": [
+        "dasatinib"
+      ],
+      "defects": [
+        "watermarked",
+        "carton_only"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_17.jpeg",
+      "brand": "Dexamethasone Oral Solution USP",
+      "expect": [
+        "dexamethasone"
+      ],
+      "defects": [
+        "us_packaging",
+        "bottle"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_18.jpeg",
+      "brand": "Deferasirox 500mg",
+      "expect": [
+        "deferasirox"
+      ],
+      "defects": [
+        "carton_and_strip"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_19.jpeg",
+      "brand": "Meropen (Meropenem Injection IP)",
+      "expect": [
+        "meropenem"
+      ],
+      "defects": [
+        "carton_only",
+        "injection"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_20.jpeg",
+      "brand": "Electral ORS",
+      "expect": [
+        "oral rehydration",
+        "sodium chloride",
+        "dextrose"
+      ],
+      "defects": [
+        "sachet",
+        "bilingual",
+        "non_tablet"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_22.jpeg",
+      "brand": "Risperdal 4mg",
+      "expect": [
+        "risperidone"
+      ],
+      "defects": [
+        "us_packaging",
+        "carton_and_strip"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_24.webp",
+      "brand": "Colospa (Mebeverine 135mg)",
+      "expect": [
+        "mebeverine"
+      ],
+      "defects": [
+        "studio",
+        "carton_and_strip"
+      ]
+    },
+    {
+      "dir": "web",
+      "source": "web_product_shot",
+      "file": "web_25.webp",
+      "brand": "Amoxycillin 500mg + Lactic Acid Bacillus",
+      "expect": [
+        "amoxycillin",
+        "lactic acid bacillus"
+      ],
+      "defects": [
+        "carton_back",
+        "composition_panel"
+      ]
+    }
+  ],
+  "_sources": {
+    "phone_capture": "Photographs taken on a phone of packs actually to hand. Carries real capture defects: rotation, tearing, crumpling, glare, hand-held framing.",
+    "web_product_shot": "Retail and catalogue product photography downloaded from the web. A MUCH easier distribution -- flat, evenly lit, no tearing, no glare -- so it is scored separately. Pooling the two would inflate the headline number by averaging real difficulty against studio conditions."
+  }
 }

@@ -58,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     spec = json.loads(args.labels.read_text())
+    entries = spec["photos"] + spec.get("web", [])
     index = get_index()
     calibrator = load_or_default()
     stopwords = boilerplate.build_stopwords(index.discriminative_vocabulary())
@@ -65,8 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     rows = []
     started = time.perf_counter()
 
-    for entry in spec["photos"]:
-        path = args.dir / entry["file"]
+    for entry in entries:
+        path = args.dir.parent / entry.get("dir", "photos") / entry["file"]
         if not path.exists():
             continue
 
@@ -76,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         dip = run_auto(image)
         ocr = te.read_renditions(dip.renditions)
         raw_tokens = ocr.consensus_tokens or ocr.tokens
-        tokens = boilerplate.filter_tokens(raw_tokens, stopwords) or raw_tokens
+        tokens = boilerplate.filter_tokens(raw_tokens, stopwords)
 
         matches = (
             index.search_compositions_from_tokens(tokens, strengths=ocr.strengths, top_k=5)
@@ -96,7 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         representable = bool(expected)
 
         rows.append({
-            "file": entry["file"], "brand": entry["brand"], "defects": entry["defects"],
+            "file": entry["file"], "source": entry.get("source", "phone_capture"),
+            "brand": entry["brand"], "defects": entry["defects"],
             "expect": expected, "predicted": matches[0].label if matches else None,
             "hit": hit, "hit_top5": hit5, "representable": representable,
             "status": status, "probability": round(probability, 3),
@@ -108,28 +110,40 @@ def main(argv: list[str] | None = None) -> int:
         })
 
     elapsed = time.perf_counter() - started
-    scored = [r for r in rows if r["representable"]]
-    answered = [r for r in rows if r["status"] in {"confident", "ambiguous"}]
-    wrong_confident = [r for r in rows if r["status"] == "confident" and not r["hit"]]
 
-    print("=" * 78)
-    print("REAL PHONE PHOTOGRAPHS")
-    print("=" * 78)
-    print(f"  images                     {len(rows)} ({len(scored)} representable in the index)")
-    print(f"  ingredient hit @1          {sum(r['hit'] for r in scored)}/{len(scored)}")
-    print(f"  ingredient hit @5          {sum(r['hit_top5'] for r in scored)}/{len(scored)}")
-    print(f"  answered                   {len(answered)}/{len(rows)}")
-    print(f"  SILENT FAILURE             {len(wrong_confident)}/{len(rows)}")
-    print(f"  orientation corrected      {sum(1 for r in rows if r['orientation'])}/{len(rows)}")
-    print(f"  boilerplate removed        "
-          f"{sum(r['tokens_raw'] - r['tokens_kept'] for r in rows)} tokens")
-    print(f"  seconds per image          {elapsed / max(len(rows), 1):.1f}")
-    print()
-    for r in rows:
-        mark = "HIT " if r["hit"] else ("top5" if r["hit_top5"] else ("n/a " if not r["representable"] else "MISS"))
-        rot = f"rot{r['orientation']}" if r["orientation"] else "----"
-        print(f"  [{mark}] {r['file'][:12]:12s} {rot:5s} {r['status'][:10]:10s} P={r['probability']:.2f} "
-              f"{str(r['predicted'])[:34]:34s} <- {r['brand'][:26]}")
+    # Reported per source, never pooled. Studio product photography is a far
+    # easier distribution than a phone photo of a torn strip, and averaging the
+    # two would report a headline number that describes neither.
+    print("=" * 82)
+    print("REAL IMAGE BENCHMARK")
+    print("=" * 82)
+
+    for source in ("phone_capture", "web_product_shot"):
+        group = [r for r in rows if r["source"] == source]
+        if not group:
+            continue
+        scored = [r for r in group if r["representable"]]
+        answered = [r for r in group if r["status"] in {"confident", "ambiguous"}]
+        wrong_confident = [r for r in group if r["status"] == "confident" and not r["hit"]]
+
+        print(f"\n-- {source} " + "-" * (78 - len(source)))
+        print(f"  images                     {len(group)} ({len(scored)} representable)")
+        print(f"  ingredient hit @1          {sum(r['hit'] for r in scored)}/{len(scored)}"
+              f"  ({sum(r['hit'] for r in scored) / max(len(scored), 1):.0%})")
+        print(f"  ingredient hit @5          {sum(r['hit_top5'] for r in scored)}/{len(scored)}")
+        print(f"  answered                   {len(answered)}/{len(group)}")
+        print(f"  SILENT FAILURE             {len(wrong_confident)}/{len(group)}")
+        print(f"  orientation corrected      {sum(1 for r in group if r['orientation'])}/{len(group)}")
+        print(f"  boilerplate removed        "
+              f"{sum(r['tokens_raw'] - r['tokens_kept'] for r in group)} tokens")
+        for r in group:
+            mark = ("HIT " if r["hit"] else "top5" if r["hit_top5"]
+                    else "n/a " if not r["representable"] else "MISS")
+            rot = f"rot{r['orientation']}" if r["orientation"] else "----"
+            print(f"    [{mark}] {r['file'][:12]:12s} {rot:5s} {r['status'][:10]:10s} "
+                  f"P={r['probability']:.2f} {str(r['predicted'])[:32]:32s} <- {r['brand'][:24]}")
+
+    print(f"\n  seconds per image          {elapsed / max(len(rows), 1):.1f}")
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "photos.json").write_text(json.dumps(rows, indent=2, default=str))

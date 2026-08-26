@@ -1,6 +1,7 @@
 [
   {
     "file": "photo_01.jpg",
+    "source": "phone_capture",
     "brand": "Montiget / Montelukast + Levocetirizine",
     "defects": [
       "upside_down",
@@ -38,6 +39,7 @@
   },
   {
     "file": "photo_02.jpg",
+    "source": "phone_capture",
     "brand": "Combiflam",
     "defects": [
       "crumpled",
@@ -70,6 +72,7 @@
   },
   {
     "file": "photo_03.jpg",
+    "source": "phone_capture",
     "brand": "Electrocare ORS",
     "defects": [
       "sachet",
@@ -110,6 +113,7 @@
   },
   {
     "file": "photo_04.jpg",
+    "source": "phone_capture",
     "brand": "Double Relax SP-10",
     "defects": [
       "rotated_90",
@@ -149,6 +153,7 @@
   },
   {
     "file": "photo_05.jpg",
+    "source": "phone_capture",
     "brand": "Belladonna Plaster (Ayurvedic)",
     "defects": [
       "bilingual",
@@ -187,6 +192,7 @@
   },
   {
     "file": "photo_06.jpg",
+    "source": "phone_capture",
     "brand": "Beclomethasone + Neomycin + Clotrimazole cream",
     "defects": [
       "rotated_90",
@@ -220,6 +226,7 @@
   },
   {
     "file": "photo_07.jpg",
+    "source": "phone_capture",
     "brand": "unidentified foil strip",
     "defects": [
       "rotated_90",
@@ -246,6 +253,7 @@
   },
   {
     "file": "photo_08.jpg",
+    "source": "phone_capture",
     "brand": "Nostrosil nasal drops",
     "defects": [
       "carton",
@@ -278,6 +286,7 @@
   },
   {
     "file": "photo_09.jpg",
+    "source": "phone_capture",
     "brand": "Pantoprazole prolonged release",
     "defects": [
       "badly_crumpled",
@@ -306,6 +315,7 @@
   },
   {
     "file": "photo_10.jpg",
+    "source": "phone_capture",
     "brand": "Crocin Advance",
     "defects": [
       "dense_fine_print",
@@ -342,6 +352,7 @@
   },
   {
     "file": "photo_11.jpg",
+    "source": "phone_capture",
     "brand": "Vicks VapoRub",
     "defects": [
       "hand_held",
@@ -382,6 +393,7 @@
   },
   {
     "file": "photo_12.jpg",
+    "source": "phone_capture",
     "brand": "Cefixime + Ofloxacin / Nimesulide + Paracetamol",
     "defects": [
       "rotated_90",
@@ -416,6 +428,480 @@
       "nagar",
       "cefixime",
       "trihydrate"
+    ]
+  },
+  {
+    "file": "web_04.jpeg",
+    "source": "web_product_shot",
+    "brand": "Civoflox-200",
+    "defects": [
+      "carton_and_strip",
+      "angled"
+    ],
+    "expect": [
+      "ofloxacin"
+    ],
+    "predicted": "ciprofloxacin 500mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 48.1,
+    "tokens_raw": 9,
+    "tokens_kept": 1,
+    "tokens": [
+      "civortox"
+    ]
+  },
+  {
+    "file": "web_06.jpeg",
+    "source": "web_product_shot",
+    "brand": "Doxepin Hydrochloride Capsules IP 25mg",
+    "defects": [
+      "studio",
+      "carton_and_strip"
+    ],
+    "expect": [
+      "doxepin"
+    ],
+    "predicted": "omeprazole",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 50.6,
+    "tokens_raw": 7,
+    "tokens_kept": 7,
+    "tokens": [
+      "wy",
+      "ss",
+      "ee",
+      "eo",
+      "ae",
+      "oe",
+      "es"
+    ]
+  },
+  {
+    "file": "web_07.jpeg",
+    "source": "web_product_shot",
+    "brand": "Esomet-DSR",
+    "defects": [
+      "studio",
+      "small_print"
+    ],
+    "expect": [
+      "esomeprazole",
+      "domperidone"
+    ],
+    "predicted": "esomeprazole 10mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 50.0,
+    "tokens_raw": 11,
+    "tokens_kept": 8,
+    "tokens": [
+      "release",
+      "sustained",
+      "nad",
+      "capsules",
+      "see",
+      "fes",
+      "ned",
+      "esomet"
+    ]
+  },
+  {
+    "file": "web_09.jpeg",
+    "source": "web_product_shot",
+    "brand": "Aezit-250",
+    "defects": [
+      "studio",
+      "carton_only"
+    ],
+    "expect": [
+      "azithromycin"
+    ],
+    "predicted": "azithromycin 250mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "unusable",
+    "orientation": 270,
+    "ocr_confidence": 50.0,
+    "tokens_raw": 3,
+    "tokens_kept": 3,
+    "tokens": [
+      "an",
+      "ee",
+      "al"
+    ]
+  },
+  {
+    "file": "web_11.jpeg",
+    "source": "web_product_shot",
+    "brand": "Tapivit (Lamivudine 150mg)",
+    "defects": [
+      "studio"
+    ],
+    "expect": [
+      "lamivudine"
+    ],
+    "predicted": "letrozole 2.5mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 51.8,
+    "tokens_raw": 16,
+    "tokens_kept": 3,
+    "tokens": [
+      "eae",
+      "tabiets",
+      "tabtets"
+    ]
+  },
+  {
+    "file": "web_12.jpeg",
+    "source": "web_product_shot",
+    "brand": "Panam Mite",
+    "defects": [
+      "studio",
+      "small_print"
+    ],
+    "expect": [
+      "amiloride",
+      "chlorthalidone"
+    ],
+    "predicted": "chlorthalidone 12.5mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "confident",
+    "probability": 0.95,
+    "quality": "good",
+    "orientation": 0,
+    "ocr_confidence": 54.0,
+    "tokens_raw": 4,
+    "tokens_kept": 3,
+    "tokens": [
+      "usp",
+      "mite",
+      "chlorthalidone"
+    ]
+  },
+  {
+    "file": "web_13.jpeg",
+    "source": "web_product_shot",
+    "brand": "Pacimol 650",
+    "defects": [
+      "watermarked",
+      "cluttered",
+      "multiple_products"
+    ],
+    "expect": [
+      "paracetamol"
+    ],
+    "predicted": "glucosamine 500mg + methyl sulfonyl methane 200mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 48.8,
+    "tokens_raw": 13,
+    "tokens_kept": 2,
+    "tokens": [
+      "bee",
+      "tai"
+    ]
+  },
+  {
+    "file": "web_15.jpeg",
+    "source": "web_product_shot",
+    "brand": "Taspodol ER 200",
+    "defects": [
+      "carton_and_strip"
+    ],
+    "expect": [
+      "tapentadol"
+    ],
+    "predicted": "caffeine 15mg + paracetamol 325mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 50.1,
+    "tokens_raw": 3,
+    "tokens_kept": 3,
+    "tokens": [
+      "ea",
+      "ng",
+      "ae"
+    ]
+  },
+  {
+    "file": "web_16.jpeg",
+    "source": "web_product_shot",
+    "brand": "Dasophil 20",
+    "defects": [
+      "watermarked",
+      "carton_only"
+    ],
+    "expect": [
+      "dasatinib"
+    ],
+    "predicted": "levofloxacin 500mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "unusable",
+    "orientation": 0,
+    "ocr_confidence": 48.3,
+    "tokens_raw": 6,
+    "tokens_kept": 1,
+    "tokens": [
+      "wee"
+    ]
+  },
+  {
+    "file": "web_17.jpeg",
+    "source": "web_product_shot",
+    "brand": "Dexamethasone Oral Solution USP",
+    "defects": [
+      "us_packaging",
+      "bottle"
+    ],
+    "expect": [
+      "dexamethasone"
+    ],
+    "predicted": "dexamethasone",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "confident",
+    "probability": 0.575,
+    "quality": "good",
+    "orientation": 0,
+    "ocr_confidence": 56.8,
+    "tokens_raw": 14,
+    "tokens_kept": 9,
+    "tokens": [
+      "dexamethasone",
+      "solution",
+      "usp",
+      "freeze",
+      "concentrate",
+      "tablets",
+      "see",
+      "pharmacist",
+      "posse"
+    ]
+  },
+  {
+    "file": "web_18.jpeg",
+    "source": "web_product_shot",
+    "brand": "Deferasirox 500mg",
+    "defects": [
+      "carton_and_strip"
+    ],
+    "expect": [
+      "deferasirox"
+    ],
+    "predicted": "deferasirox 500mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "ambiguous",
+    "probability": 0.419,
+    "quality": "good",
+    "orientation": 0,
+    "ocr_confidence": 67.7,
+    "tokens_raw": 4,
+    "tokens_kept": 3,
+    "tokens": [
+      "tablet",
+      "deferasirox",
+      "dispersible"
+    ]
+  },
+  {
+    "file": "web_19.jpeg",
+    "source": "web_product_shot",
+    "brand": "Meropen (Meropenem Injection IP)",
+    "defects": [
+      "carton_only",
+      "injection"
+    ],
+    "expect": [
+      "meropenem"
+    ],
+    "predicted": "meropenem 1000mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "confident",
+    "probability": 0.758,
+    "quality": "unusable",
+    "orientation": 0,
+    "ocr_confidence": 48.1,
+    "tokens_raw": 19,
+    "tokens_kept": 6,
+    "tokens": [
+      "mer",
+      "meropenem",
+      "opener",
+      "injection",
+      "mert",
+      "abbo"
+    ]
+  },
+  {
+    "file": "web_20.jpeg",
+    "source": "web_product_shot",
+    "brand": "Electral ORS",
+    "defects": [
+      "sachet",
+      "bilingual",
+      "non_tablet"
+    ],
+    "expect": [
+      "oral rehydration",
+      "sodium chloride",
+      "dextrose"
+    ],
+    "predicted": "itraconazole 200mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 50.3,
+    "tokens_raw": 1,
+    "tokens_kept": 1,
+    "tokens": [
+      "it"
+    ]
+  },
+  {
+    "file": "web_22.jpeg",
+    "source": "web_product_shot",
+    "brand": "Risperdal 4mg",
+    "defects": [
+      "us_packaging",
+      "carton_and_strip"
+    ],
+    "expect": [
+      "risperidone"
+    ],
+    "predicted": "caffeine 30mg + chlorpheniramine 4mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 49.2,
+    "tokens_raw": 8,
+    "tokens_kept": 1,
+    "tokens": [
+      "dis"
+    ]
+  },
+  {
+    "file": "web_24.webp",
+    "source": "web_product_shot",
+    "brand": "Colospa (Mebeverine 135mg)",
+    "defects": [
+      "studio",
+      "carton_and_strip"
+    ],
+    "expect": [
+      "mebeverine"
+    ],
+    "predicted": "serratiopeptidase 10mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "unusable",
+    "orientation": 0,
+    "ocr_confidence": 47.2,
+    "tokens_raw": 47,
+    "tokens_kept": 7,
+    "tokens": [
+      "wee",
+      "bey",
+      "eee",
+      "sey",
+      "ses",
+      "sees",
+      "ske"
+    ]
+  },
+  {
+    "file": "web_25.webp",
+    "source": "web_product_shot",
+    "brand": "Amoxycillin 500mg + Lactic Acid Bacillus",
+    "defects": [
+      "carton_back",
+      "composition_panel"
+    ],
+    "expect": [
+      "amoxycillin",
+      "lactic acid bacillus"
+    ],
+    "predicted": "progesterone 200mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "ambiguous",
+    "probability": 0.419,
+    "quality": "unusable",
+    "orientation": 0,
+    "ocr_confidence": 58.8,
+    "tokens_raw": 40,
+    "tokens_kept": 13,
+    "tokens": [
+      "hard",
+      "capsule",
+      "spores",
+      "gelatin",
+      "colour",
+      "light",
+      "trom",
+      "herd",
+      "resistant",
+      "ata",
+      "direc",
+      "contalns"
     ]
   }
 ]

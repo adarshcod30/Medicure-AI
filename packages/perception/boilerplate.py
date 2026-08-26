@@ -120,10 +120,35 @@ def build_stopwords(ingredient_vocabulary: set[str] | None = None) -> frozenset[
     return frozenset((_RAW_STOPWORDS - ingredient_vocabulary) | NEVER_PROTECT)
 
 
-def filter_tokens(tokens: list[str], stopwords: frozenset[str]) -> list[str]:
+MIN_TOKENS_AFTER_FILTER = 1
+"""Fall back to the unfiltered bag only when filtering leaves nothing at all.
+
+A higher floor looked obviously right and measured worse. The reasoning for one
+was: on a sparse read, filtering strips almost everything — one real product
+shot went from 8 tokens to 1, another from 13 to 2 — so surely the unfiltered
+bag is better than a single survivor.
+
+Swept over 27 labelled real images (min_kept 0, 1, 2, 3, 4, 6), the answer was
+no. A floor of 1 gave 12/27 ingredient hits; every higher value gave 11/27.
+Restoring the boilerplate brings back more noise than the surviving tokens were
+worth, even when only one survives — because the token that survived is, by
+construction, the only one carrying any information.
+
+One image out of 27 is not a strong signal and this should be re-measured on a
+larger set. But there is no evidence for a higher floor, and the simpler rule
+is the one to keep. Silent failures were 0 at every setting."""
+
+
+def filter_tokens(
+    tokens: list[str], stopwords: frozenset[str], *, min_kept: int = MIN_TOKENS_AFTER_FILTER
+) -> list[str]:
     """Drop boilerplate and tokens too short to identify anything.
 
-    Order is preserved: the OCR fusion already ranked tokens by corroboration
-    and confidence, and that ranking is still meaningful.
+    Returns the ORIGINAL list when filtering would leave fewer than `min_kept`
+    tokens. Order is otherwise preserved: the OCR fusion already ranked tokens
+    by corroboration and confidence, and that ranking is still meaningful.
     """
-    return [t for t in tokens if t not in stopwords and len(t) >= 3]
+    kept = [t for t in tokens if t not in stopwords and len(t) >= 3]
+    if len(kept) < min_kept and len(tokens) > len(kept):
+        return list(tokens)
+    return kept or list(tokens)

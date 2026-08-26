@@ -172,8 +172,9 @@ class Orchestrator:
         # out of reach of children" — because it is set in a dense even block
         # that reads far better than a stylised brand name. Those words appear
         # on every pack, identify nothing, and crowd out the composition tokens.
-        filtered = boilerplate.filter_tokens(tokens, self._stopwords)
-        tokens = filtered or tokens
+        # filter_tokens returns the original bag when filtering would strip it
+        # below a usable size — see MIN_TOKENS_AFTER_FILTER.
+        tokens = boilerplate.filter_tokens(tokens, self._stopwords)
         query = " ".join(tokens)
 
         if not query.strip():
