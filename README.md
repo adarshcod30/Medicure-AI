@@ -65,6 +65,27 @@ calibration buys, and it is not available from a model that always answers.
 Reproduce with `python -m eval.bench_identify --samples 300`, or add
 `--with-llm-baseline` to run the no-retrieval Bedrock arm alongside it.
 
+### And the number that matters more
+
+On **real retail photographs** of Indian strips, top-1 composition accuracy is
+**13.3%**, not 74%.
+
+| | Synthetic corrupted text | Real retail photos |
+|---|---|---|
+| Top-1 correct | 74.3% | **13.3%** |
+| Answered | 83.0% | 26.7% |
+| Silent failure | 5.0% | 6.7% |
+
+The gap is resolution, not algorithm. Retail thumbnails run 163×309 to 554×554,
+where composition print is a few pixels tall; OCR returns `['ae','wey','be']`
+and there is nothing to identify. The system abstains on 73% of them, which is
+the correct response.
+
+Publishing both numbers is the point. A synthetic benchmark alone would have
+reported 74% and been wrong about the system's real behaviour by a factor of
+five. `python -m eval.bench_real_images` reproduces it — labels come free from
+retail captions (see below), so no manual transcription is involved.
+
 ---
 
 ## What it looks like working

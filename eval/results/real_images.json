@@ -1,0 +1,309 @@
+[
+  {
+    "file": "055e6813bd70.jpg",
+    "brand": "Zenflox-DT 100",
+    "truth": "cefixime 100mg + ofloxacin 100mg",
+    "predicted": "mefenamic acid 100mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.244,
+    "quality": "degraded",
+    "preset": "fast",
+    "ocr_confidence": 52.1,
+    "n_tokens": 3,
+    "tokens": [
+      "dispersible",
+      "zenflox-100",
+      "ltd"
+    ]
+  },
+  {
+    "file": "16b389e84fbb.jpg",
+    "brand": "Telrose",
+    "truth": "rosuvastatin 10mg + telmisartan 40mg",
+    "predicted": "telmisartan 20mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "confident",
+    "probability": 0.575,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 58.1,
+    "n_tokens": 3,
+    "tokens": [
+      "tablets",
+      "and",
+      "telmisartan"
+    ]
+  },
+  {
+    "file": "19fc9846f75e.jpg",
+    "brand": "Dolokind-SR",
+    "truth": "aceclofenac 100mg + paracetamol 325mg",
+    "predicted": "testosterone 250mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "degraded",
+    "preset": "fast",
+    "ocr_confidence": 47.5,
+    "n_tokens": 11,
+    "tokens": [
+      "release",
+      "bs",
+      "ae",
+      "es",
+      "as",
+      "sy",
+      "oo",
+      "tablets",
+      "sustained",
+      "sustaned",
+      "storage"
+    ]
+  },
+  {
+    "file": "26d50bb6a5d0.jpg",
+    "brand": "Tenali",
+    "truth": "teneligliptin 20mg",
+    "predicted": "rabeprazole 20mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "ambiguous",
+    "probability": 0.459,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 53.8,
+    "n_tokens": 4,
+    "tokens": [
+      "ae",
+      "wey",
+      "be",
+      "tablets"
+    ]
+  },
+  {
+    "file": "4670dc233770.jpg",
+    "brand": "Rosugard 10Mg",
+    "truth": "rosuvastatin 5mg",
+    "predicted": "rosuvastatin 5mg",
+    "correct": true,
+    "in_top5": true,
+    "status": "ambiguous",
+    "probability": 0.419,
+    "quality": "unusable",
+    "preset": "full",
+    "ocr_confidence": 47.8,
+    "n_tokens": 4,
+    "tokens": [
+      "go",
+      "ii",
+      "ig",
+      "rosugard"
+    ]
+  },
+  {
+    "file": "4922fc3c2e95.jpg",
+    "brand": "Cilnikem 10",
+    "truth": "cilnidipine 10mg",
+    "predicted": "losartan 50mg + ramipril 5mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 48.1,
+    "n_tokens": 6,
+    "tokens": [
+      "ay",
+      "ie",
+      "hy",
+      "dag",
+      "we",
+      "lr"
+    ]
+  },
+  {
+    "file": "55d2ad4a0cae.jpg",
+    "brand": "Saril",
+    "truth": "ofloxacin 200mg + ornidazole 500mg",
+    "predicted": "levocetirizine 5mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 51.5,
+    "n_tokens": 10,
+    "tokens": [
+      "zz",
+      "se",
+      "za",
+      "ae",
+      "lz",
+      "we",
+      "lee",
+      "ax",
+      "ee",
+      "ze"
+    ]
+  },
+  {
+    "file": "629d68121536.jpg",
+    "brand": "Sinadom",
+    "truth": "cinnarizine 20mg + domperidone 15mg",
+    "predicted": "ciprofloxacin 500mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "unusable",
+    "preset": "full",
+    "ocr_confidence": 49.5,
+    "n_tokens": 1,
+    "tokens": [
+      "wi"
+    ]
+  },
+  {
+    "file": "72670af9a796.jpg",
+    "brand": "Dydrohope",
+    "truth": "dydrogesterone 10mg",
+    "predicted": "dydrogesterone 10mg",
+    "correct": true,
+    "in_top5": true,
+    "status": "ambiguous",
+    "probability": 0.419,
+    "quality": "unusable",
+    "preset": "full",
+    "ocr_confidence": 51.9,
+    "n_tokens": 6,
+    "tokens": [
+      "ss",
+      "tablets",
+      "es",
+      "be",
+      "se",
+      "dydrohope"
+    ]
+  },
+  {
+    "file": "7cd58c80fa1c.jpg",
+    "brand": "Enzomac",
+    "truth": "bromelain 90mg + trypsin 48mg",
+    "predicted": "azithromycin 250mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 51.1,
+    "n_tokens": 5,
+    "tokens": [
+      "ay",
+      "ss",
+      "ee",
+      "se",
+      "gy"
+    ]
+  },
+  {
+    "file": "81db233156c3.jpg",
+    "brand": "Baralgan NU",
+    "truth": "dicyclomine 20mg + paracetamol 500mg",
+    "predicted": "nimesulide 100mg + paracetamol 500mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "good",
+    "preset": "light",
+    "ocr_confidence": 52.1,
+    "n_tokens": 2,
+    "tokens": [
+      "ne",
+      "ni"
+    ]
+  },
+  {
+    "file": "923196d30c92.jpg",
+    "brand": "Beltas",
+    "truth": "bilastine 20mg",
+    "predicted": "methylcobalamin 1mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 49.1,
+    "n_tokens": 1,
+    "tokens": [
+      "ae"
+    ]
+  },
+  {
+    "file": "d4e6f1dee028.jpg",
+    "brand": "Doloxicam",
+    "truth": "piroxicam",
+    "predicted": "escitalopram oxalate 10mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "poor",
+    "preset": "full",
+    "ocr_confidence": 52.5,
+    "n_tokens": 1,
+    "tokens": [
+      "ss"
+    ]
+  },
+  {
+    "file": "f433fb9d2930.jpg",
+    "brand": "Meprate",
+    "truth": "medroxyprogesterone 5mg",
+    "predicted": "methylcobalamin 1mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "good",
+    "preset": "light",
+    "ocr_confidence": 43.7,
+    "n_tokens": 2,
+    "tokens": [
+      "sa",
+      "ae"
+    ]
+  },
+  {
+    "file": "f757da37e943.jpg",
+    "brand": "Hopace 10Mg",
+    "truth": "ramipril 10mg",
+    "predicted": "rabeprazole 20mg",
+    "correct": false,
+    "in_top5": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "unusable",
+    "preset": "full",
+    "ocr_confidence": 47.9,
+    "n_tokens": 8,
+    "tokens": [
+      "at",
+      "be",
+      "ty",
+      "re",
+      "ye",
+      "ey",
+      "ai",
+      "ili"
+    ]
+  }
+]

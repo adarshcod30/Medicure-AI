@@ -43,28 +43,66 @@ from .index import DEFAULT_ARTIFACT_DIR, BrandIndex, CompositionMatch
 CALIBRATOR_VERSION = 1
 
 FEATURE_NAMES = (
+    # --- match quality: how good is the best candidate ---
     "top_similarity",
     "margin",
     "margin_ratio",
     "second_similarity",
     "support",
+    "candidate_count",
+    # --- query quality: is the question even answerable ---
     "query_length",
     "query_tokens",
-    "candidate_count",
+    "mean_token_length",
+    "long_token_fraction",
+    "longest_token",
+    "has_digits",
 )
 
 
 def extract_features(matches: list[CompositionMatch], query: str) -> np.ndarray:
-    """Turn a ranked candidate list into a feature vector.
+    """Turn a ranked candidate list and its query into a feature vector.
 
-    `margin` — the gap between the best and second-best candidate — is the most
-    informative feature and the one a bare similarity threshold throws away. A
-    top score of 0.62 with the runner-up at 0.61 means the index found two
-    equally good answers and cannot choose; the same 0.62 with the runner-up at
-    0.20 is a clean, isolated match. Identical similarity, opposite conclusions.
+    Two families, and the second was added only after real images exposed why
+    it was needed.
+
+    **Match quality.** `margin` — the gap between best and second-best — is the
+    most informative of these and the one a bare similarity threshold throws
+    away. A top score of 0.62 with the runner-up at 0.61 means the index found
+    two equally good answers and cannot choose; the same 0.62 with the runner-up
+    at 0.20 is a clean isolated match. Identical similarity, opposite meaning.
+
+    **Query quality.** Originally absent, and its absence was a real failure. On
+    a 242x208 retail thumbnail, OCR returned `['ae', 'wey', 'be', 'tablets']` —
+    the composition print is a few pixels tall and unreadable. One composition
+    happened to match those fragments well and with a wide margin, which is
+    exactly the pattern that meant "correct" in training, so the calibrator
+    returned **P = 0.93, confident, and wrong**.
+
+    Nothing in the match-quality features can catch that, because the match
+    genuinely was clean — of a degenerate query. The training distribution never
+    contained one: synthetic corruption always derives from a real product name,
+    so it never produces two-letter noise. Real OCR on an unreadable image
+    produces almost nothing else.
+
+    `mean_token_length` and `long_token_fraction` capture it directly. A query
+    whose tokens average three characters carries no identifying information no
+    matter how well something matches it.
     """
+    tokens = [t for t in query.split() if t]
+    lengths = [len(t) for t in tokens]
+
+    query_features = [
+        float(len(query)),
+        float(len(tokens)),
+        float(np.mean(lengths)) if lengths else 0.0,
+        float(sum(1 for n in lengths if n >= 4) / len(lengths)) if lengths else 0.0,
+        float(max(lengths)) if lengths else 0.0,
+        float(any(c.isdigit() for c in query)),
+    ]
+
     if not matches:
-        return np.zeros(len(FEATURE_NAMES), dtype=np.float32)
+        return np.array([0.0] * 6 + query_features, dtype=np.float32)
 
     top = matches[0].top_similarity
     second = matches[1].top_similarity if len(matches) > 1 else 0.0
@@ -76,9 +114,8 @@ def extract_features(matches: list[CompositionMatch], query: str) -> np.ndarray:
             (top - second) / top if top > 0 else 0.0,
             second,
             float(matches[0].support),
-            float(len(query)),
-            float(len(query.split())),
             float(len(matches)),
+            *query_features,
         ],
         dtype=np.float32,
     )
@@ -331,10 +368,11 @@ def build_training_data(
             labels.append(int(bool(matches) and matches[0].signature == record.signature))
             queries.append(query)
 
-    # Negative controls: queries that match nothing real. Without them the
-    # calibrator only ever sees inputs that have a correct answer somewhere in
-    # the index, and learns that high similarity always means correct. Real
-    # users photograph cosmetics, food packets and handwriting.
+    # --- negative control 1: nonsense words ---
+    # Without these the calibrator only ever sees inputs that have a correct
+    # answer somewhere in the index, and learns that high similarity always
+    # means correct. Real users photograph cosmetics, food packets and
+    # handwriting.
     alphabet = "abcdefghijklmnopqrstuvwxyz"
     for _ in range(len(rows) // 4):
         nonsense = " ".join(
@@ -345,6 +383,39 @@ def build_training_data(
         features.append(extract_features(matches, nonsense))
         labels.append(0)
         queries.append(nonsense)
+
+    # --- negative control 2: degenerate OCR fragments ---
+    #
+    # This class exists because of a measured failure, not a hypothetical one.
+    # On low-resolution retail thumbnails the composition print is a few pixels
+    # tall and Tesseract returns short fragments: `['ae', 'wey', 'be',
+    # 'tablets']`, `['sa', 'ae']`, `['wi']`. One composition matched those
+    # cleanly and with a wide margin, and the calibrator — which had never seen
+    # such a query — scored it 0.93 and got it wrong.
+    #
+    # Corruption of a real name cannot generate this: it always preserves
+    # enough structure to stay word-like. So the failure mode has to be
+    # synthesised explicitly, sampled from the character bigrams OCR actually
+    # emits on unreadable input.
+    fragments = [
+        "ae", "wey", "be", "ss", "es", "as", "sy", "oo", "zz", "se", "za", "lz",
+        "we", "lee", "ay", "ie", "hy", "we", "lr", "gy", "wi", "sa", "at", "ty",
+        "re", "ye", "ey", "ai", "ne", "ni", "ii", "ig", "go", "bs", "dag", "oe",
+    ]
+    filler = ["tablets", "tablet", "ltd", "mg", "india", "capsules", "strip"]
+
+    for _ in range(len(rows) // 3):
+        # Mostly noise, occasionally with one real-looking word — which is what
+        # OCR does when a single large glyph survives on an unreadable strip.
+        parts = [rng.choice(fragments) for _ in range(rng.randint(1, 6))]
+        if rng.random() < 0.4:
+            parts.append(rng.choice(filler))
+        degenerate = " ".join(parts)
+
+        matches = index.search_compositions(degenerate, top_k=5)
+        features.append(extract_features(matches, degenerate))
+        labels.append(0)
+        queries.append(degenerate)
 
     return np.vstack(features), np.asarray(labels), queries
 

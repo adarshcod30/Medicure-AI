@@ -6,33 +6,33 @@
       "name": "MediCure (retrieval + calibrated abstention)",
       "n": 300,
       "correct": 223,
-      "answered": 248,
-      "abstained": 52,
-      "wrong_and_confident": 13,
-      "ece": 0.0493,
+      "answered": 249,
+      "abstained": 51,
+      "wrong_and_confident": 15,
+      "ece": 0.0385,
       "coverage": {
         "p90": {
           "achievable": true,
-          "coverage": 0.7667,
-          "precision": 0.9,
-          "threshold": 0.4118,
-          "answered": 230,
+          "coverage": 0.7833,
+          "precision": 0.9021,
+          "threshold": 0.5152,
+          "answered": 235,
           "total": 300
         },
         "p95": {
           "achievable": true,
           "coverage": 0.6333,
           "precision": 0.9526,
-          "threshold": 0.7143,
+          "threshold": 0.6667,
           "answered": 190,
           "total": 300
         },
         "p99": {
           "achievable": true,
-          "coverage": 0.4633,
-          "precision": 0.9928,
-          "threshold": 0.9286,
-          "answered": 139,
+          "coverage": 0.4867,
+          "precision": 0.9932,
+          "threshold": 0.95,
+          "answered": 146,
           "total": 300
         }
       },
@@ -40,7 +40,7 @@
         "heavy": {
           "n": 100,
           "accuracy": 0.42,
-          "coverage": 0.56
+          "coverage": 0.57
         },
         "light": {
           "n": 100,
@@ -55,10 +55,10 @@
       },
       "notes": [],
       "accuracy": 0.7433,
-      "precision_when_answering": 0.8992,
-      "coverage_rate": 0.8267,
-      "silent_failure_rate": 0.0433,
-      "median_latency_ms": 64.3
+      "precision_when_answering": 0.8956,
+      "coverage_rate": 0.83,
+      "silent_failure_rate": 0.05,
+      "median_latency_ms": 63.5
     }
   ]
 }
