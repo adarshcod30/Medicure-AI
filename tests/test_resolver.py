@@ -279,3 +279,56 @@ def test_fitted_calibrator_round_trips():
     high = calibrator.probability([_match(0.95), _match(0.10)], "augmentin 625 duo")
     low = calibrator.probability([_match(0.30), _match(0.29)], "zz")
     assert high > low
+
+
+# --- packaging boilerplate ------------------------------------------------
+
+
+def test_boilerplate_filtering_keeps_ingredients_and_drops_storage_text():
+    """Real photos returned the storage paragraph instead of the composition.
+
+    'store in a cool dry place', 'keep out of reach of children' appears on
+    every pack, identifies nothing, and crowded out the composition tokens.
+    """
+    from packages.perception import boilerplate
+
+    vocabulary = {"belladonna", "paraffin", "atropine", "paracetamol"}
+    stopwords = boilerplate.build_stopwords(vocabulary)
+
+    tokens = ["store", "cool", "dry", "place", "children", "paracetamol", "belladonna", "mg"]
+    kept = boilerplate.filter_tokens(tokens, stopwords)
+
+    assert "paracetamol" in kept and "belladonna" in kept
+    assert "store" not in kept and "children" not in kept
+
+
+def test_function_words_are_filtered_even_inside_ingredient_names():
+    """Corpus frequency is the wrong test for 'and' / 'from' / 'with'.
+
+    They appear in under 2% of compositions (only in names like 'water for
+    injection'), so a frequency rule marks them discriminative and protects
+    them — while they appear in essentially every OCR read of a pack.
+    """
+    from packages.perception import boilerplate
+
+    stopwords = boilerplate.build_stopwords({"and", "from", "with", "water", "belladonna"})
+    assert "and" in stopwords and "from" in stopwords and "with" in stopwords
+    # A genuine ingredient word stays protected.
+    assert "water" not in stopwords
+
+
+def test_dose_and_form_words_are_never_filtered():
+    from packages.perception import boilerplate
+
+    stopwords = boilerplate.build_stopwords(set())
+    for keeper in ("mg", "ml", "tablet", "capsule", "syrup", "injection"):
+        assert keeper not in stopwords
+
+
+@requires_index
+def test_discriminative_vocabulary_excludes_ubiquitous_words():
+    from packages.resolver.index import get_index
+
+    vocabulary = get_index().discriminative_vocabulary(max_document_frequency=0.02)
+    assert "belladonna" in vocabulary
+    assert len(vocabulary) > 500

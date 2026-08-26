@@ -119,6 +119,24 @@ def run(image: bytes | np.ndarray, config: DipConfig | None = None) -> DipResult
     metrics["resize_scale"] = scale
     record("acquire", img)
 
+    # --- 1b. orientation --------------------------------------------------
+    # First, because everything downstream assumes upright text: the boundary
+    # detector, the skew estimator and every OCR pass.
+    #
+    # In twelve real phone photos, four were rotated 90 degrees and one was
+    # upside down. The original design handled this with a rendition fan-out
+    # over (0, 90, 270) — which omitted 180 entirely, and which the adaptive
+    # router then disabled for "good quality" images. Both were wrong for the
+    # same reason: quality measures exposure, focus and glare, and says nothing
+    # about which way up a strip is lying.
+    if config.detect_orientation:
+        from ..orientation import correct as correct_orientation
+
+        img, orient = correct_orientation(img, min_confidence=config.orientation_min_confidence)
+        metrics["orientation"] = orient.to_dict()
+        if orient.detected:
+            record(f"orientation:{orient.angle}", img)
+
     # --- 2. denoise -------------------------------------------------------
     if config.denoise:
         img, used = denoise.apply(img, config.denoise_method)

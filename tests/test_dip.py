@@ -399,3 +399,43 @@ def test_auto_probe_agrees_with_the_reported_verdict():
     expected, expected_name = select_config(result.quality)
 
     assert result.metrics["auto_preset"] == expected_name
+
+
+# --- orientation ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("applied", [90, 180, 270])
+def test_orientation_probe_recovers_a_known_rotation(applied):
+    """Regression test for a bug real photos exposed.
+
+    The rendition fan-out tried (0, 90, 270) and omitted 180, so an upside-down
+    strip — one of twelve real phone photos — was unreadable by construction.
+    """
+    from packages.perception.orientation import _rotate90, detect
+
+    upright = synthetic.make_strip()
+    rotated = _rotate90(upright, applied)
+
+    result = detect(rotated)
+    # The correction is the inverse of what was applied.
+    assert result.angle == (360 - applied) % 360, f"got {result.angle} for applied {applied}"
+
+
+def test_orientation_leaves_upright_images_alone():
+    """An unjustified rotation is worse than none."""
+    from packages.perception.orientation import detect
+
+    result = detect(synthetic.make_strip())
+    assert result.angle == 0
+    assert result.detected is False
+
+
+def test_orientation_is_enabled_for_every_preset_except_raw():
+    """Orientation has nothing to do with image quality.
+
+    Four of five rotated real photos scored quality "good" and were routed to a
+    preset that could not rotate. Quality measures exposure, focus and glare.
+    """
+    for preset in (DipConfig.light, DipConfig.fast, DipConfig.full, DipConfig.foil):
+        assert preset().detect_orientation is True, preset.__name__
+    assert DipConfig.raw().detect_orientation is False

@@ -1,0 +1,31 @@
+{
+  "_about": "Ground truth for data/raw/photos/, read directly off the packaging in each photograph. These are real phone captures with real failure modes: rotation, tearing, crumpling, glare, bilingual text and hand-held framing. Twelve images is small, but it is twelve REAL ones, and it already exposed three bugs that 1,200 synthetic queries did not.",
+  "_labelling": "Each label is the composition printed on the pack. 'expect' is the ingredient set that must appear in the predicted composition for a hit. Brand is recorded for reference but is not what the system is scored on -- see BrandIndex.search_compositions for why composition rather than brand is the unit.",
+  "_defects": "Recorded per image so failures can be attributed to a cause rather than averaged away.",
+  "photos": [
+    {"file": "photo_01.jpg", "brand": "Montiget / Montelukast + Levocetirizine",
+     "expect": ["montelukast", "levocetirizine"], "defects": ["upside_down", "torn", "dark_background", "angled"]},
+    {"file": "photo_02.jpg", "brand": "Combiflam",
+     "expect": ["ibuprofen", "paracetamol"], "defects": ["crumpled", "torn", "glare", "angled"]},
+    {"file": "photo_03.jpg", "brand": "Electrocare ORS",
+     "expect": ["oral rehydration", "sodium chloride", "dextrose"], "defects": ["sachet", "bilingual", "creased", "non_tablet"]},
+    {"file": "photo_04.jpg", "brand": "Double Relax SP-10",
+     "expect": ["aceclofenac", "paracetamol", "serratiopeptidase"], "defects": ["rotated_90", "foil_back", "small_print"]},
+    {"file": "photo_05.jpg", "brand": "Belladonna Plaster (Ayurvedic)",
+     "expect": ["belladonna"], "defects": ["bilingual", "paper", "non_tablet", "ayurvedic"]},
+    {"file": "photo_06.jpg", "brand": "Beclomethasone + Neomycin + Clotrimazole cream",
+     "expect": ["beclomethasone", "neomycin"], "defects": ["rotated_90", "carton", "narrow_face"]},
+    {"file": "photo_07.jpg", "brand": "unidentified foil strip",
+     "expect": [], "defects": ["rotated_90", "foil_back", "vertical_text", "unlabelled"]},
+    {"file": "photo_08.jpg", "brand": "Nostrosil nasal drops",
+     "expect": ["xylometazoline"], "defects": ["carton", "glossy", "non_tablet"]},
+    {"file": "photo_09.jpg", "brand": "Pantoprazole prolonged release",
+     "expect": ["pantoprazole"], "defects": ["badly_crumpled", "textured_background", "torn"]},
+    {"file": "photo_10.jpg", "brand": "Crocin Advance",
+     "expect": ["paracetamol"], "defects": ["dense_fine_print", "strip_back"]},
+    {"file": "photo_11.jpg", "brand": "Vicks VapoRub",
+     "expect": ["camphor", "menthol", "eucalyptus"], "defects": ["hand_held", "circular_tin", "curved_surface", "non_tablet"]},
+    {"file": "photo_12.jpg", "brand": "Cefixime + Ofloxacin / Nimesulide + Paracetamol",
+     "expect": ["cefixime", "ofloxacin"], "defects": ["rotated_90", "multiple_strips", "foil_back"]}
+  ]
+}

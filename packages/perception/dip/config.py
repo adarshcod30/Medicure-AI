@@ -31,6 +31,22 @@ class DipConfig:
     auto_orient: bool = True
     """Honour the EXIF orientation tag. Phone photos are routinely 90 degrees off."""
 
+    detect_orientation: bool = True
+    """Detect and correct 90/180/270 rotation by cheap OCR probing.
+
+    On by default in EVERY preset, including `light` and `raw`. A strip's
+    orientation has nothing to do with its image quality — in twelve real phone
+    photos, four rotated 90 degrees and one upside-down all scored "good" — so
+    routing a well-exposed image to a preset that cannot rotate is exactly
+    backwards. See `packages/perception/orientation.py` for why Tesseract's own
+    OSD mode is not usable here."""
+
+    orientation_min_confidence: float = 1.25
+    """Ratio between the best and second-best orientation score required before
+    rotating. A ratio rather than an absolute threshold, because OCR scores
+    scale with how much text a pack carries. An unjustified rotation is worse
+    than none."""
+
     # ---- noise -----------------------------------------------------------
     denoise: bool = True
     denoise_method: DenoiseMethod = "auto"
@@ -125,9 +141,16 @@ class DipConfig:
     niblack_k: float = -0.2
 
     # ---- rendition fan-out -----------------------------------------------
-    rotations: tuple[int, ...] = (0, 90, 270)
-    """Indian blister strips very often print the composition vertically along
-    the edge. Tesseract will not find it without the rotated passes."""
+    rotations: tuple[int, ...] = (0, 90)
+    """Extra orientations to try during the rendition fan-out.
+
+    This is now a *secondary* mechanism. Whole-image rotation is handled up
+    front by `detect_orientation`, so these exist only for the case where a
+    pack carries text in two directions at once — an upright carton with the
+    composition printed vertically along one edge, which is common on Indian
+    strips. Fan-out is a poor tool for whole-image orientation: it multiplies
+    OCR cost by four and, as measured, admits confident nonsense from the
+    passes that are looking at sideways text.""" 
 
     max_renditions: int = 9
     """Hard cap on (binarization x rotation) combinations, for latency."""
@@ -167,6 +190,7 @@ class DipConfig:
         other row is this plus one more stage.
         """
         return cls(
+            detect_orientation=False,
             denoise=False,
             remove_glare=False,
             normalize_illumination=False,

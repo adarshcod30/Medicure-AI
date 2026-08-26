@@ -1,0 +1,421 @@
+[
+  {
+    "file": "photo_01.jpg",
+    "brand": "Montiget / Montelukast + Levocetirizine",
+    "defects": [
+      "upside_down",
+      "torn",
+      "dark_background",
+      "angled"
+    ],
+    "expect": [
+      "montelukast",
+      "levocetirizine"
+    ],
+    "predicted": "azithromycin 500mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "poor",
+    "orientation": 180,
+    "ocr_confidence": 57.6,
+    "tokens_raw": 22,
+    "tokens_kept": 10,
+    "tokens": [
+      "majhitar",
+      "kee",
+      "ught",
+      "but",
+      "light",
+      "protecte",
+      "tine",
+      "sikkim-737",
+      "fic",
+      "stard"
+    ]
+  },
+  {
+    "file": "photo_02.jpg",
+    "brand": "Combiflam",
+    "defects": [
+      "crumpled",
+      "torn",
+      "glare",
+      "angled"
+    ],
+    "expect": [
+      "ibuprofen",
+      "paracetamol"
+    ],
+    "predicted": "chlorpheniramine 2mg/5ml + phenylephrine 5mg/5ml",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "degraded",
+    "orientation": 0,
+    "ocr_confidence": 59.0,
+    "tokens_raw": 21,
+    "tokens_kept": 5,
+    "tokens": [
+      "sald",
+      "rag",
+      "toblet",
+      "uncoated",
+      "phys"
+    ]
+  },
+  {
+    "file": "photo_03.jpg",
+    "brand": "Electrocare ORS",
+    "defects": [
+      "sachet",
+      "bilingual",
+      "creased",
+      "non_tablet"
+    ],
+    "expect": [
+      "oral rehydration",
+      "sodium chloride",
+      "dextrose"
+    ],
+    "predicted": "racecadotril 100mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 51.6,
+    "tokens_raw": 51,
+    "tokens_kept": 16,
+    "tokens": [
+      "body",
+      "salts",
+      "rehydration",
+      "fluios",
+      "eee",
+      "oral",
+      "ration",
+      "lemon",
+      "grs",
+      "ora",
+      "electrocare",
+      "elegtrogare"
+    ]
+  },
+  {
+    "file": "photo_04.jpg",
+    "brand": "Double Relax SP-10",
+    "defects": [
+      "rotated_90",
+      "foil_back",
+      "small_print"
+    ],
+    "expect": [
+      "aceclofenac",
+      "paracetamol",
+      "serratiopeptidase"
+    ],
+    "predicted": "aceclofenac 200mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "good",
+    "orientation": 90,
+    "ocr_confidence": 72.2,
+    "tokens_raw": 82,
+    "tokens_kept": 49,
+    "tokens": [
+      "sector",
+      "double",
+      "medicine",
+      "taking",
+      "liver",
+      "damage",
+      "face",
+      "breathing",
+      "itching",
+      "colour",
+      "plot",
+      "serious"
+    ]
+  },
+  {
+    "file": "photo_05.jpg",
+    "brand": "Belladonna Plaster (Ayurvedic)",
+    "defects": [
+      "bilingual",
+      "paper",
+      "non_tablet",
+      "ayurvedic"
+    ],
+    "expect": [
+      "belladonna"
+    ],
+    "predicted": "atropine 0.25mg + belladonna dry extract 10mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "poor",
+    "orientation": 0,
+    "ocr_confidence": 72.6,
+    "tokens_raw": 89,
+    "tokens_kept": 64,
+    "tokens": [
+      "end",
+      "plaster",
+      "come",
+      "dry",
+      "exposure",
+      "belladonna",
+      "ayurvedic",
+      "pert",
+      "remove",
+      "cover",
+      "worn",
+      "take"
+    ]
+  },
+  {
+    "file": "photo_06.jpg",
+    "brand": "Beclomethasone + Neomycin + Clotrimazole cream",
+    "defects": [
+      "rotated_90",
+      "carton",
+      "narrow_face"
+    ],
+    "expect": [
+      "beclomethasone",
+      "neomycin"
+    ],
+    "predicted": "neomycin 350mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "confident",
+    "probability": 0.575,
+    "quality": "good",
+    "orientation": 90,
+    "ocr_confidence": 64.8,
+    "tokens_raw": 7,
+    "tokens_kept": 7,
+    "tokens": [
+      "beclomethasone",
+      "neomycin",
+      "sulphate",
+      "dipropionate",
+      "miconazole",
+      "nitrate",
+      "cream"
+    ]
+  },
+  {
+    "file": "photo_07.jpg",
+    "brand": "unidentified foil strip",
+    "defects": [
+      "rotated_90",
+      "foil_back",
+      "vertical_text",
+      "unlabelled"
+    ],
+    "expect": [],
+    "predicted": "ceftriaxone 2000mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": false,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "good",
+    "orientation": 90,
+    "ocr_confidence": 52.1,
+    "tokens_raw": 10,
+    "tokens_kept": 2,
+    "tokens": [
+      "wha",
+      "foy"
+    ]
+  },
+  {
+    "file": "photo_08.jpg",
+    "brand": "Nostrosil nasal drops",
+    "defects": [
+      "carton",
+      "glossy",
+      "non_tablet"
+    ],
+    "expect": [
+      "xylometazoline"
+    ],
+    "predicted": "norethisterone 5mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.006,
+    "quality": "unusable",
+    "orientation": 0,
+    "ocr_confidence": 50.9,
+    "tokens_raw": 18,
+    "tokens_kept": 7,
+    "tokens": [
+      "nostrosil",
+      "ometazoline",
+      "see",
+      "blocked",
+      "nese",
+      "res",
+      "froni"
+    ]
+  },
+  {
+    "file": "photo_09.jpg",
+    "brand": "Pantoprazole prolonged release",
+    "defects": [
+      "badly_crumpled",
+      "textured_background",
+      "torn"
+    ],
+    "expect": [
+      "pantoprazole"
+    ],
+    "predicted": "progesterone natural micronized 100mg 100mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.0,
+    "quality": "degraded",
+    "orientation": 0,
+    "ocr_confidence": 54.7,
+    "tokens_raw": 6,
+    "tokens_kept": 3,
+    "tokens": [
+      "oxig",
+      "tic",
+      "ate"
+    ]
+  },
+  {
+    "file": "photo_10.jpg",
+    "brand": "Crocin Advance",
+    "defects": [
+      "dense_fine_print",
+      "strip_back"
+    ],
+    "expect": [
+      "paracetamol"
+    ],
+    "predicted": "paracetamol 500mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "ambiguous",
+    "probability": 0.515,
+    "quality": "good",
+    "orientation": 0,
+    "ocr_confidence": 68.8,
+    "tokens_raw": 85,
+    "tokens_kept": 47,
+    "tokens": [
+      "sight",
+      "avery",
+      "taka",
+      "patiala",
+      "licensed",
+      "shortest",
+      "without",
+      "industrial",
+      "box",
+      "days",
+      "thinning",
+      "mouth"
+    ]
+  },
+  {
+    "file": "photo_11.jpg",
+    "brand": "Vicks VapoRub",
+    "defects": [
+      "hand_held",
+      "circular_tin",
+      "curved_surface",
+      "non_tablet"
+    ],
+    "expect": [
+      "camphor",
+      "menthol",
+      "eucalyptus"
+    ],
+    "predicted": "cetirizine 5mg + paracetamol 325mg",
+    "hit": false,
+    "hit_top5": false,
+    "representable": true,
+    "status": "abstained",
+    "probability": 0.167,
+    "quality": "unusable",
+    "orientation": 90,
+    "ocr_confidence": 48.8,
+    "tokens_raw": 111,
+    "tokens_kept": 20,
+    "tokens": [
+      "pocket",
+      "cough",
+      "relieves",
+      "pack",
+      "pee",
+      "cold",
+      "symptoms",
+      "bee",
+      "att",
+      "teh",
+      "wth",
+      "ees"
+    ]
+  },
+  {
+    "file": "photo_12.jpg",
+    "brand": "Cefixime + Ofloxacin / Nimesulide + Paracetamol",
+    "defects": [
+      "rotated_90",
+      "multiple_strips",
+      "foil_back"
+    ],
+    "expect": [
+      "cefixime",
+      "ofloxacin"
+    ],
+    "predicted": "cefixime 200mg + ofloxacin 200mg",
+    "hit": true,
+    "hit_top5": true,
+    "representable": true,
+    "status": "confident",
+    "probability": 0.758,
+    "quality": "good",
+    "orientation": 90,
+    "ocr_confidence": 63.7,
+    "tokens_raw": 70,
+    "tokens_kept": 31,
+    "tokens": [
+      "titanium",
+      "medicine",
+      "film",
+      "coated",
+      "tablet",
+      "gandhi",
+      "mois",
+      "light",
+      "composition",
+      "nagar",
+      "cefixime",
+      "trihydrate"
+    ]
+  }
+]

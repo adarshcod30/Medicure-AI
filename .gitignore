@@ -39,3 +39,9 @@ dist/
 # DIP stage dumps
 out/
 stages/
+
+# Collected evaluation imagery — local only, not redistributed
+data/raw/photos/
+data/raw/packaging/
+data/raw/gimages/
+data/raw/web/

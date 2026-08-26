@@ -647,6 +647,37 @@ class BrandIndex:
     def all_generics(self) -> list[GenericRecord]:
         return list(self._generics)
 
+    def discriminative_vocabulary(self, max_document_frequency: float = 0.02) -> set[str]:
+        """Ingredient words that actually identify something.
+
+        A word is kept only if it appears in fewer than `max_document_frequency`
+        of distinct compositions. That threshold is what separates `belladonna`
+        (one composition family) from `and` (thousands) — both are technically
+        present in the composition vocabulary, but only one narrows anything
+        down.
+
+        Used to protect real ingredient names from boilerplate filtering without
+        also protecting the connectors inside multi-word names.
+        """
+        from collections import Counter
+
+        seen: set[tuple] = set()
+        counts: Counter = Counter()
+
+        for row, signature in enumerate(self._signatures):
+            if not signature or signature in seen:
+                continue
+            seen.add(signature)
+            words = {
+                w
+                for w in str(self._columns["composition"][row]).replace("+", " ").split()
+                if w.isalpha() and len(w) > 2
+            }
+            counts.update(words)
+
+        total = max(len(seen), 1)
+        return {w for w, n in counts.items() if n / total < max_document_frequency}
+
     def stats(self) -> dict:
         return {
             "brands": len(self),

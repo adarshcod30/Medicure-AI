@@ -34,7 +34,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from packages.perception import tesseract_engine
+from packages.perception import boilerplate, tesseract_engine
 from packages.perception.dip.pipeline import DipResult, run_auto
 from packages.pharmacology.alternatives import AlternativesResult, find_alternatives
 from packages.pharmacology.price import CeilingPriceTable, PriceCheck, check_price
@@ -126,6 +126,10 @@ class Orchestrator:
         """Optional. Anything with `.explain(ScanResult) -> dict`. Absent means
         no prose, and every other field is unaffected."""
 
+        # Built once from the index's own discriminative vocabulary, so no
+        # active ingredient can ever be filtered out as boilerplate.
+        self._stopwords = boilerplate.build_stopwords(index.discriminative_vocabulary())
+
     # --- entry points -----------------------------------------------------
 
     def analyse_image(self, image_bytes: bytes, *, explain: bool = True) -> ScanResult:
@@ -162,6 +166,14 @@ class Orchestrator:
         # only one rendition survived the score gate nothing can be corroborated
         # and consensus comes back empty — better a noisier query than none.
         tokens = ocr.consensus_tokens or ocr.tokens
+
+        # Strip packaging boilerplate. On real photographs OCR reliably returns
+        # the storage and dosage paragraph — "store in a cool dry place", "keep
+        # out of reach of children" — because it is set in a dense even block
+        # that reads far better than a stylised brand name. Those words appear
+        # on every pack, identify nothing, and crowd out the composition tokens.
+        filtered = boilerplate.filter_tokens(tokens, self._stopwords)
+        tokens = filtered or tokens
         query = " ".join(tokens)
 
         if not query.strip():

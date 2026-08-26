@@ -67,8 +67,27 @@ Reproduce with `python -m eval.bench_identify --samples 300`, or add
 
 ### And the number that matters more
 
-On **real retail photographs** of Indian strips, top-1 composition accuracy is
-**13.3%**, not 74%.
+On **12 real phone photographs** of Indian medicine packaging — one upside
+down, four rotated 90°, two badly crumpled, two bilingual, one held in a hand
+on a curved tin:
+
+| | Real phone photos |
+|---|---|
+| Ingredient hit @1 | 5 / 11 representable |
+| Answered | 3 / 12 |
+| **Silent failure** | **0 / 12** |
+| Orientation corrected | 6 / 12 |
+
+Both confident answers were correct (cefixime + ofloxacin; beclomethasone +
+neomycin). Every failure was an abstention, not a wrong answer given
+confidently. That is the behaviour the whole architecture exists to produce,
+and it only became measurable once real photographs existed.
+
+Twelve images found three bugs that 1,200 synthetic queries did not — see
+"Things this project got wrong". `python -m eval.bench_photos` reproduces it.
+
+On **real retail photographs** (catalogue thumbnails, a different and easier
+distribution), top-1 composition accuracy is **13.3%**, not 74%.
 
 | | Synthetic corrupted text | Real retail photos |
 |---|---|---|
@@ -228,6 +247,21 @@ test.
 - **Doses were swapped between drugs** in `A and B Tablets 500mg + 125mg`.
 - **`crocin 500` returned azithromycin** under a weighted score fusion, then
   again under a support bonus that rewarded market share over match quality.
+- **Calibration did not transfer across input distributions.** Every feature
+  described *match* quality; none described *query* quality. On a 242×208
+  thumbnail whose OCR read `['ae','wey','be','tablets']`, one composition
+  matched cleanly with a wide margin — the exact pattern that meant "correct"
+  in training — so the calibrator returned **P = 0.93, confident, and wrong**.
+- **180° rotation was never tried.** The fan-out used (0, 90, 270), so an
+  upside-down strip was unreadable by construction. And the adaptive router
+  *disabled* rotation for "good quality" images — four of five rotated real
+  photos scored "good", because quality measures exposure and focus and says
+  nothing about orientation. Tesseract's own OSD mode was tried first and
+  failed on 10 of 12, reporting Fraktur and Cyrillic at confidence 0.4.
+- **OCR read the storage paragraph, not the composition.** "Store in a cool dry
+  place", "keep out of reach of children" is set in a dense even block that
+  reads far better than a stylised brand name, and it crowded out the
+  identifying tokens. 311 boilerplate tokens now filtered across 12 photos.
 
 Full detail in the commit history.
 
