@@ -32,23 +32,38 @@ built around six things a language model provably cannot do alone.
 
 ### The headline number
 
-Held out, 3,900 synthetic corrupted-OCR queries:
+300 held-out queries, all of them corrupted OCR, stratified by severity:
 
 | | MediCure |
 |---|---|
-| Accuracy, answering everything | 67.1% |
-| Coverage at 90% precision | 67.6% |
-| **Coverage at 95% precision** | **48.7%** |
-| Coverage at 99% precision | 30.6% |
-| Expected calibration error | 0.0405 |
-| Brier score | 0.098 |
+| Accuracy, answering everything | 74.3% |
+| Answered (coverage) | 82.7% |
+| Precision when it answers | 89.9% |
+| **Silent failure — confidently wrong** | **4.3%** |
+| Coverage at 95% precision | 63.3% |
+| Expected calibration error | 0.049 |
+| Median latency | 64 ms |
 
-A system answering everything at 67% accuracy fails **silently** a third of the
-time and the user cannot tell which third. Holding it to 95% precision, it
-answers about half of queries and says "I am not sure" on the rest. A visible
-failure on a medicine is one a patient can act on by asking a pharmacist.
+Silent failure is the number that matters clinically. A wrong answer delivered
+confidently is one the patient has no way to catch. A frontier model on these
+same inputs answers ~100% of the time, so *its* silent-failure rate is
+whatever its error rate is.
 
-Reproduce with `python -m eval.bench_identify --samples 300`.
+The severity breakdown is where the behaviour shows:
+
+| Damage | Accuracy | Answered |
+|---|---|---|
+| Light | 97% | 98% |
+| Moderate | 84% | 94% |
+| **Heavy** | 42% | **56%** |
+
+On severely damaged input it declines almost half the time — which is correct,
+because on severely damaged input it is right only 42% of the time. The
+coverage falls where the accuracy falls. That correspondence is what
+calibration buys, and it is not available from a model that always answers.
+
+Reproduce with `python -m eval.bench_identify --samples 300`, or add
+`--with-llm-baseline` to run the no-retrieval Bedrock arm alongside it.
 
 ---
 

@@ -1,0 +1,64 @@
+{
+  "samples": 300,
+  "seed": 42,
+  "arms": [
+    {
+      "name": "MediCure (retrieval + calibrated abstention)",
+      "n": 300,
+      "correct": 223,
+      "answered": 248,
+      "abstained": 52,
+      "wrong_and_confident": 13,
+      "ece": 0.0493,
+      "coverage": {
+        "p90": {
+          "achievable": true,
+          "coverage": 0.7667,
+          "precision": 0.9,
+          "threshold": 0.4118,
+          "answered": 230,
+          "total": 300
+        },
+        "p95": {
+          "achievable": true,
+          "coverage": 0.6333,
+          "precision": 0.9526,
+          "threshold": 0.7143,
+          "answered": 190,
+          "total": 300
+        },
+        "p99": {
+          "achievable": true,
+          "coverage": 0.4633,
+          "precision": 0.9928,
+          "threshold": 0.9286,
+          "answered": 139,
+          "total": 300
+        }
+      },
+      "by_severity": {
+        "heavy": {
+          "n": 100,
+          "accuracy": 0.42,
+          "coverage": 0.56
+        },
+        "light": {
+          "n": 100,
+          "accuracy": 0.97,
+          "coverage": 0.98
+        },
+        "moderate": {
+          "n": 100,
+          "accuracy": 0.84,
+          "coverage": 0.94
+        }
+      },
+      "notes": [],
+      "accuracy": 0.7433,
+      "precision_when_answering": 0.8992,
+      "coverage_rate": 0.8267,
+      "silent_failure_rate": 0.0433,
+      "median_latency_ms": 64.3
+    }
+  ]
+}
