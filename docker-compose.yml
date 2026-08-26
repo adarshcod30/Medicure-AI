@@ -1,0 +1,46 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: development
+      MONGODB_URI: mongodb://mongo:27017
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      # Off by default so the stack runs with no AWS account. Retrieval, price
+      # checks, alternatives and abstention all work without it; only the
+      # natural-language explanation is omitted.
+      ENABLE_BEDROCK: "false"
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      # Artifacts are baked into the image at build time. Mounting the host
+      # directory lets you rebuild the index without rebuilding the image.
+      - ./data/artifacts:/app/data/artifacts
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_URL: http://localhost:8000/v1
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:

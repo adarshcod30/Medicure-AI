@@ -1,79 +1,59 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Single FastAPI service. The Node/Express gateway that used to sit in front
+// of the ML service is gone — one backend, one base URL.
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/v1';
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 120000, // 2 min (OCR + LLM can be slow)
+  // OCR over several DIP renditions plus retrieval takes ~1s locally, but a
+  // cold start has to load a 125 MB index first.
+  timeout: 120000,
 });
 
-// Attach JWT to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('medicure_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// ── Scan endpoints ──────────────────────────────────
-export async function scanImage(imageFile, targetLanguage = 'en-US') {
+/** Photo of packaging -> grounded, cited result. */
+export async function scanImage(imageFile, { explain = true } = {}) {
   const formData = new FormData();
-  formData.append('image', imageFile);
-  formData.append('target_language', targetLanguage);
-  
-  const { data } = await api.post('/scan', formData, {
+  formData.append('file', imageFile);
+
+  const { data } = await api.post(`/scan?explain=${explain}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return data;
 }
 
-// ── Chat endpoints ──────────────────────────────────
-export async function sendChatMessage(scanId, message, targetLanguage = 'en-US') {
-  const { data } = await api.post('/chat', { 
-    scan_id: scanId, 
-    message,
-    target_language: targetLanguage 
-  });
+/** Typed name or composition -> the same contract as scanImage. */
+export async function searchMedicine(query, { explain = true } = {}) {
+  const { data } = await api.post('/search', { query, explain });
   return data;
 }
 
-// ── Search endpoints ────────────────────────────────
-export async function searchMedicine(name, targetLanguage = 'en-US') {
-  const { data } = await api.post('/search', { 
-    name,
-    target_language: targetLanguage 
-  });
+/** Type-ahead over brand names. Lexical only, no claims attached. */
+export async function suggest(q, limit = 8) {
+  if (!q || q.trim().length < 2) return { suggestions: [] };
+  const { data } = await api.get('/suggest', { params: { q, limit } });
   return data;
 }
 
-// ── History endpoints ───────────────────────────────
-export async function getHistory(page = 1, limit = 20) {
-  const { data } = await api.get('/history', { params: { page, limit } });
+/** Readiness, including which capabilities are degraded and why. */
+export async function getHealth() {
+  const { data } = await api.get('/health');
   return data;
 }
 
-export async function deleteScan(scanId) {
-  const { data } = await api.delete(`/history/${scanId}`);
-  return data;
-}
-
-// ── Auth endpoints ──────────────────────────────────
-export async function loginWithGoogle(credential) {
-  const { data } = await api.post('/auth/google', { credential });
-  if (data.token) {
-    localStorage.setItem('medicure_token', data.token);
-    localStorage.setItem('medicure_user', JSON.stringify(data.user));
-  }
-  return data;
-}
-
-export async function devLogin() {
-  const { data } = await api.post('/auth/dev-login');
-  if (data.token) {
-    localStorage.setItem('medicure_token', data.token);
-    localStorage.setItem('medicure_user', JSON.stringify(data.user));
-  }
+/**
+ * Index coverage, calibration report and known data gaps.
+ * Surfaced in the UI on purpose — a system whose main claim is that it knows
+ * when to stop should be willing to show its own limits.
+ */
+export async function getMetrics() {
+  const { data } = await api.get('/metrics');
   return data;
 }
 

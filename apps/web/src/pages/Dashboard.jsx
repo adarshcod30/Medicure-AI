@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { FiCamera, FiSearch } from 'react-icons/fi';
 import ImageUpload from '../components/ImageUpload';
 import ResultsDisplay from '../components/ResultsDisplay';
-import ChatInterface from '../components/ChatInterface';
 import SafetyWarning from '../components/SafetyWarning';
 import { scanImage, searchMedicine } from '../services/api';
 import { locales } from '../locales';
@@ -35,14 +34,13 @@ export default function Dashboard() {
 
     setLoading(true);
     try {
-      const res = await scanImage(selectedFile, targetLanguage);
-      if (res.success) {
-        setResult({ ...res.data, scan_id: res.scan_id });
-      } else {
-        setError(res.error || 'Failed to analyze the image.');
-      }
+      // The response IS the result. There is no success/data envelope: an
+      // unreadable photo is a successful analysis whose finding is "not enough
+      // information", and it carries the quality metrics that justify saying so.
+      const res = await scanImage(selectedFile);
+      setResult(res);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Network error.');
+      setError(err.response?.data?.detail || err.message || 'Network error.');
     } finally {
       setLoading(false);
     }
@@ -58,14 +56,10 @@ export default function Dashboard() {
     setLoading(true);
 
     try {
-      const res = await searchMedicine(name, targetLanguage);
-      if (res.success) {
-        setResult({ ...res.data, scan_id: res.scan_id });
-      } else {
-        setError(res.error || 'Failed to find medicine info.');
-      }
+      const res = await searchMedicine(name);
+      setResult(res);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Network error.');
+      setError(err.response?.data?.detail || err.message || 'Network error.');
     } finally {
       setLoading(false);
     }
@@ -194,13 +188,12 @@ export default function Dashboard() {
           }}>
             {/* Left: Structured Data */}
             <section className="card">
-              <ResultsDisplay data={result} lang={targetLanguage} />
+              <ResultsDisplay data={result} />
             </section>
 
             {/* Right: Chatbot */}
             <section style={{ position: 'sticky', top: '100px' }}>
               <h3 style={{ marginBottom: '1rem' }}>{t.follow_up_title}</h3>
-              <ChatInterface scanId={result.scan_id} targetLanguage={targetLanguage} />
             </section>
           </div>
         )}
