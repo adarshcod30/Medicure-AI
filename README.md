@@ -74,10 +74,19 @@ on a curved tin:
 | | Phone photos | Web product shots |
 |---|---|---|
 | Images | 12 | 16 |
-| Ingredient hit @1 | 5 / 11 (45%) | 8 / 16 (50%) |
-| Answered | 4 / 12 | 7 / 16 |
+| Ingredient hit @1 | **7 / 11 (64%)** | **12 / 16 (75%)** |
+| Answered | 9 / 12 | 7 / 16 |
 | **Silent failure** | **0 / 12** | **0 / 16** |
 | Orientation corrected | 6 / 12 | 1 / 16 |
+| Vision transcription used | 7 / 12 | 12 / 16 |
+
+Vision transcription (Nova Pro, `--vision`) is what moved these: 13/27 to
+**19/27** overall, with silent failure still at zero. The discipline in its
+output is the interesting part — it returns `NostrosiI` with the OCR-style
+capital-I typo *uncorrected*, and `stro-resistant` as the visible tail of
+"gastro-resistant" *without completing it*. The model could trivially have
+written both correctly. The prompt holds it to transcription, so the resolver
+still decides what the drug is.
 
 Scored separately, never pooled. Studio product photography is a far easier
 distribution than a phone photo of a torn strip, and one averaged number would

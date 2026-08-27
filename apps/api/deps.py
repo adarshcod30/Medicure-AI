@@ -15,6 +15,7 @@ import logging
 from packages.orchestrator import Orchestrator
 from packages.pharmacology.price import CeilingPriceTable
 from packages.reasoning.bedrock import BedrockClient
+from packages.perception.vision_transcribe import VisionTranscriber
 from packages.reasoning.explainer import Explainer
 from packages.resolver.calibrate import Calibrator, load_or_default
 from packages.resolver.index import BrandIndex
@@ -64,6 +65,7 @@ class AppState:
         logger.info("ceiling prices: %s", self.ceiling_table.coverage)
 
         explainer = None
+        transcriber = None
         if settings.enable_bedrock:
             try:
                 self.bedrock = BedrockClient(
@@ -78,7 +80,11 @@ class AppState:
                     secret_access_key=settings.aws_secret_access_key,
                 )
                 explainer = Explainer(self.bedrock)
-                logger.info("bedrock explainer enabled (%s)", settings.bedrock_fast_model_id)
+                transcriber = VisionTranscriber(self.bedrock)
+                logger.info(
+                    "bedrock enabled — explain=%s vision=%s",
+                    settings.bedrock_fast_model_id, settings.bedrock_model_id,
+                )
             except Exception as exc:  # noqa: BLE001
                 # Never fatal, and the catch is deliberately broad. Every
                 # load-bearing capability is deterministic, so losing Bedrock
@@ -95,6 +101,7 @@ class AppState:
             calibrator=self.calibrator,
             ceiling_table=self.ceiling_table,
             explainer=explainer,
+            transcriber=transcriber,
         )
 
 

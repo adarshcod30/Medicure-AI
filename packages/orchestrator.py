@@ -34,7 +34,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from packages.perception import boilerplate, tesseract_engine
+from packages.perception import boilerplate, tesseract_engine, vision_transcribe
 from packages.perception.dip.pipeline import DipResult, run_auto
 from packages.pharmacology.alternatives import AlternativesResult, find_alternatives
 from packages.pharmacology.price import CeilingPriceTable, PriceCheck, check_price
@@ -86,6 +86,9 @@ class ScanResult:
     identification: Identification
     image_quality: dict | None = None
     ocr: dict | None = None
+    vision: dict | None = None
+    """Vision transcription, when it fired. Text and provenance only — there is
+    no field here for an identification the model produced."""
     price_check: PriceCheck | None = None
     alternatives: AlternativesResult | None = None
     reference_product: BrandRecord | None = None
@@ -98,6 +101,7 @@ class ScanResult:
             "identification": self.identification.to_dict(),
             "image_quality": self.image_quality,
             "ocr": self.ocr,
+            "vision": self.vision,
             "reference_product": self.reference_product.to_dict()
             if self.reference_product
             else None,
@@ -118,11 +122,15 @@ class Orchestrator:
         calibrator: Calibrator,
         ceiling_table: CeilingPriceTable,
         explainer: Any | None = None,
+        transcriber: Any | None = None,
     ):
         self.index = index
         self.calibrator = calibrator
         self.ceiling_table = ceiling_table
         self.explainer = explainer
+        self.transcriber = transcriber
+        """Optional vision transcriber. Fires only when the quality gate says
+        the image is degraded, and produces TEXT ONLY — it never identifies."""
         """Optional. Anything with `.explain(ScanResult) -> dict`. Absent means
         no prose, and every other field is unaffected."""
 
@@ -175,6 +183,32 @@ class Orchestrator:
         # filter_tokens returns the original bag when filtering would strip it
         # below a usable size — see MIN_TOKENS_AFTER_FILTER.
         tokens = boilerplate.filter_tokens(tokens, self._stopwords)
+
+        # --- vision transcription -----------------------------------------
+        # Fires only when the quality gate judged the image degraded or worse.
+        # That is where Tesseract starts dropping characters and where the
+        # extra cost is justified; a clean photo does not need it.
+        #
+        # It returns TEXT, never an identification. Its tokens join the same
+        # bag, go through the same resolver and the same calibration. Measured
+        # on a crumpled Combiflam strip: Tesseract produced ['by','the','store',
+        # 'mg','away','adults'] while vision produced ['sanofi','combiflam',
+        # 'ibuprofen','paracetamol'] — brand and composition.
+        vision_info: dict | None = None
+        if self.transcriber and dip.quality.use_vision_fallback:
+            mark = time.perf_counter()
+            transcription = self.transcriber.transcribe(dip.processed)
+            stages["vision"] = round((time.perf_counter() - mark) * 1000, 1)
+
+            if transcription.available and transcription.tokens:
+                vision_tokens = boilerplate.filter_tokens(
+                    transcription.tokens, self._stopwords
+                )
+                tokens, attribution = vision_transcribe.merge_tokens(tokens, vision_tokens)
+                vision_info = {**transcription.to_dict(), "attribution": attribution}
+            else:
+                vision_info = transcription.to_dict()
+
         query = " ".join(tokens)
 
         if not query.strip():
@@ -198,6 +232,7 @@ class Orchestrator:
         result = self._resolve(query, strengths=ocr.strengths, stages=stages, started=started)
         result.image_quality = quality
         result.ocr = ocr.to_dict()
+        result.vision = vision_info
 
         if explain and self.explainer and result.identification.status != "abstained":
             result.explanation = self._explain(result, stages)

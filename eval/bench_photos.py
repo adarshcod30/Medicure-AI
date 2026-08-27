@@ -38,6 +38,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from packages.perception import boilerplate, tesseract_engine as te  # noqa: E402
+from packages.perception import vision_transcribe  # noqa: E402
 from packages.perception.dip import acquire  # noqa: E402
 from packages.perception.dip.pipeline import run_auto  # noqa: E402
 from packages.resolver.calibrate import load_or_default  # noqa: E402
@@ -51,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
                         default=REPO_ROOT / "eval" / "datasets" / "photo_labels.json")
     parser.add_argument("--max-dimension", type=int, default=1600)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "eval" / "results")
+    parser.add_argument("--vision", action="store_true",
+                        help="also run Bedrock vision transcription (costs tokens)")
     args = parser.parse_args(argv)
 
     if not args.labels.exists():
@@ -62,6 +65,23 @@ def main(argv: list[str] | None = None) -> int:
     index = get_index()
     calibrator = load_or_default()
     stopwords = boilerplate.build_stopwords(index.discriminative_vocabulary())
+
+    transcriber = None
+    if args.vision:
+        from apps.api.config import get_settings
+        from packages.reasoning.bedrock import BedrockClient
+
+        cfg = get_settings()
+        transcriber = vision_transcribe.VisionTranscriber(
+            BedrockClient(
+                region=cfg.aws_region, model_id=cfg.bedrock_model_id,
+                fast_model_id=cfg.bedrock_fast_model_id,
+                max_tokens=cfg.bedrock_max_tokens, temperature=cfg.bedrock_temperature,
+                access_key_id=cfg.aws_access_key_id,
+                secret_access_key=cfg.aws_secret_access_key,
+            )
+        )
+        print("vision transcription ENABLED")
 
     rows = []
     started = time.perf_counter()
@@ -78,6 +98,14 @@ def main(argv: list[str] | None = None) -> int:
         ocr = te.read_renditions(dip.renditions)
         raw_tokens = ocr.consensus_tokens or ocr.tokens
         tokens = boilerplate.filter_tokens(raw_tokens, stopwords)
+
+        used_vision = False
+        if transcriber and dip.quality.use_vision_fallback:
+            t = transcriber.transcribe(dip.processed)
+            if t.available and t.tokens:
+                vt = boilerplate.filter_tokens(t.tokens, stopwords)
+                tokens, _attr = vision_transcribe.merge_tokens(tokens, vt)
+                used_vision = True
 
         matches = (
             index.search_compositions_from_tokens(tokens, strengths=ocr.strengths, top_k=5)
@@ -106,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             "orientation": dip.metrics.get("orientation", {}).get("angle", 0),
             "ocr_confidence": round(ocr.mean_confidence, 1),
             "tokens_raw": len(raw_tokens), "tokens_kept": len(tokens),
+            "vision": used_vision,
             "tokens": tokens[:12],
         })
 
@@ -134,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  answered                   {len(answered)}/{len(group)}")
         print(f"  SILENT FAILURE             {len(wrong_confident)}/{len(group)}")
         print(f"  orientation corrected      {sum(1 for r in group if r['orientation'])}/{len(group)}")
+        print(f"  vision transcription used  {sum(1 for r in group if r.get('vision'))}/{len(group)}")
         print(f"  boilerplate removed        "
               f"{sum(r['tokens_raw'] - r['tokens_kept'] for r in group)} tokens")
         for r in group:
