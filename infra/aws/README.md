@@ -80,6 +80,25 @@ pydantic-settings loads `.env` into the settings object *without* exporting to
 them as arguments instead. `/v1/health` reports `credential_source: "env"` when
 they are being used, so there is no ambiguity about which identity is active.
 
+## Step 5 (optional) — create the guardrail
+
+The guardrail is what makes groundedness a *mechanical* check rather than a
+prompt request. Without it the system still works and still cites its sources;
+what is lost is the filter that blocks an explanation straying from the
+retrieved facts.
+
+Creating one needs permissions the application deliberately does not have:
+
+1. IAM → `medicure-dev` → add `medicure-setup-policy.json` as an inline policy.
+2. `python scripts/create_guardrail.py`
+3. Put the printed ID in `.env` as `BEDROCK_GUARDRAIL_ID`.
+4. **Remove the inline policy again.**
+
+Step 4 is not ceremony. A service that can delete its own safety controls does
+not have safety controls. The permanent policy grants `ApplyGuardrail` and
+nothing else, so the running app can be protected by a guardrail but cannot
+weaken or remove it.
+
 ## Step 5 — verify
 
     bash infra/aws/verify.sh

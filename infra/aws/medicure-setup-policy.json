@@ -1,0 +1,18 @@
+{
+  "_comment": "ONE-TIME SETUP ONLY. Attach, run scripts/create_guardrail.py, then DETACH. The running application must never hold these permissions -- creating and deleting guardrails is an administrative action, and a service that can delete its own safety controls does not have safety controls. medicure-bedrock-policy.json is what the app runs with permanently; it can ApplyGuardrail and nothing more.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GuardrailSetupTemporary",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:CreateGuardrail",
+        "bedrock:ListGuardrails",
+        "bedrock:GetGuardrail",
+        "bedrock:UpdateGuardrail",
+        "bedrock:CreateGuardrailVersion"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
