@@ -74,8 +74,8 @@ on a curved tin:
 | | Phone photos | Web product shots |
 |---|---|---|
 | Images | 12 | 16 |
-| Ingredient hit @1 | 5 / 11 (45%) | 7 / 16 (44%) |
-| Answered | 3 / 12 | 5 / 16 |
+| Ingredient hit @1 | 5 / 11 (45%) | 8 / 16 (50%) |
+| Answered | 4 / 12 | 7 / 16 |
 | **Silent failure** | **0 / 12** | **0 / 16** |
 | Orientation corrected | 6 / 12 | 1 / 16 |
 

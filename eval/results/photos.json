@@ -13,7 +13,7 @@
       "montelukast",
       "levocetirizine"
     ],
-    "predicted": "azithromycin 500mg",
+    "predicted": "sodium hyaluronate 1.8mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -21,19 +21,21 @@
     "probability": 0.167,
     "quality": "poor",
     "orientation": 180,
-    "ocr_confidence": 57.6,
-    "tokens_raw": 22,
-    "tokens_kept": 10,
+    "ocr_confidence": 56.6,
+    "tokens_raw": 61,
+    "tokens_kept": 23,
     "tokens": [
       "majhitar",
+      "sikkim-737",
+      "protecte",
       "kee",
+      "light",
+      "tne",
       "ught",
       "but",
-      "light",
-      "protecte",
       "tine",
-      "sikkim-737",
       "fic",
+      "ane",
       "stard"
     ]
   },
@@ -51,7 +53,7 @@
       "ibuprofen",
       "paracetamol"
     ],
-    "predicted": "chlorpheniramine 2mg/5ml + phenylephrine 5mg/5ml",
+    "predicted": "pegylated recombinant human erythropoietin 0.1mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -59,15 +61,22 @@
     "probability": 0.006,
     "quality": "degraded",
     "orientation": 0,
-    "ocr_confidence": 59.0,
-    "tokens_raw": 21,
-    "tokens_kept": 5,
+    "ocr_confidence": 54.7,
+    "tokens_raw": 83,
+    "tokens_kept": 31,
     "tokens": [
+      "ine",
       "sald",
       "rag",
       "toblet",
       "uncoated",
-      "phys"
+      "phys",
+      "combitlany",
+      "vin",
+      "het",
+      "demark",
+      "agim",
+      "seid"
     ]
   },
   {
@@ -85,7 +94,7 @@
       "sodium chloride",
       "dextrose"
     ],
-    "predicted": "racecadotril 100mg",
+    "predicted": "electrolytes",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -93,22 +102,22 @@
     "probability": 0.167,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 51.6,
-    "tokens_raw": 51,
-    "tokens_kept": 16,
+    "ocr_confidence": 52.1,
+    "tokens_raw": 92,
+    "tokens_kept": 37,
     "tokens": [
       "body",
       "salts",
-      "rehydration",
-      "fluios",
       "eee",
+      "rehydration",
+      "lemon",
+      "fluios",
       "oral",
       "ration",
-      "lemon",
       "grs",
-      "ora",
-      "electrocare",
-      "elegtrogare"
+      "sestore",
+      "lost",
+      "due"
     ]
   },
   {
@@ -125,30 +134,30 @@
       "paracetamol",
       "serratiopeptidase"
     ],
-    "predicted": "aceclofenac 200mg",
+    "predicted": "diclofenac 50mg + serratiopeptidase 10mg",
     "hit": true,
     "hit_top5": true,
     "representable": true,
-    "status": "abstained",
-    "probability": 0.167,
+    "status": "confident",
+    "probability": 0.758,
     "quality": "good",
     "orientation": 90,
-    "ocr_confidence": 72.2,
-    "tokens_raw": 82,
-    "tokens_kept": 49,
+    "ocr_confidence": 65.1,
+    "tokens_raw": 144,
+    "tokens_kept": 87,
     "tokens": [
-      "sector",
       "double",
       "medicine",
       "taking",
-      "liver",
-      "damage",
       "face",
       "breathing",
       "itching",
-      "colour",
       "plot",
-      "serious"
+      "dry",
+      "point",
+      "distt",
+      "saiyam",
+      "kurali"
     ]
   },
   {
@@ -172,22 +181,22 @@
     "probability": 0.167,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 72.6,
-    "tokens_raw": 89,
-    "tokens_kept": 64,
+    "ocr_confidence": 68.3,
+    "tokens_raw": 129,
+    "tokens_kept": 94,
     "tokens": [
       "end",
+      "between",
       "plaster",
       "come",
       "dry",
       "exposure",
-      "belladonna",
-      "ayurvedic",
-      "pert",
-      "remove",
-      "cover",
       "worn",
-      "take"
+      "days",
+      "sponge",
+      "spirit",
+      "ory",
+      "off"
     ]
   },
   {
@@ -208,12 +217,12 @@
     "hit_top5": true,
     "representable": true,
     "status": "confident",
-    "probability": 0.575,
+    "probability": 0.889,
     "quality": "good",
     "orientation": 90,
-    "ocr_confidence": 64.8,
-    "tokens_raw": 7,
-    "tokens_kept": 7,
+    "ocr_confidence": 64.4,
+    "tokens_raw": 11,
+    "tokens_kept": 9,
     "tokens": [
       "beclomethasone",
       "neomycin",
@@ -221,7 +230,9 @@
       "dipropionate",
       "miconazole",
       "nitrate",
-      "cream"
+      "cream",
+      "nitratecream",
+      "eqoaliderma"
     ]
   },
   {
@@ -235,20 +246,30 @@
       "unlabelled"
     ],
     "expect": [],
-    "predicted": "ceftriaxone 2000mg",
+    "predicted": "domperidone 10mg + pantoprazole 20mg",
     "hit": false,
     "hit_top5": false,
     "representable": false,
     "status": "abstained",
-    "probability": 0.0,
+    "probability": 0.04,
     "quality": "good",
     "orientation": 90,
-    "ocr_confidence": 52.1,
-    "tokens_raw": 10,
-    "tokens_kept": 2,
+    "ocr_confidence": 50.8,
+    "tokens_raw": 77,
+    "tokens_kept": 29,
     "tokens": [
+      "foy",
       "wha",
-      "foy"
+      "gov",
+      "ang",
+      "clow",
+      "pom",
+      "pal",
+      "vilage-salivar",
+      "lie",
+      "cog",
+      "cif",
+      "bite"
     ]
   },
   {
@@ -263,25 +284,30 @@
     "expect": [
       "xylometazoline"
     ],
-    "predicted": "norethisterone 5mg",
+    "predicted": "diclofenac 50mg + paracetamol 325mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.006,
+    "probability": 0.04,
     "quality": "unusable",
     "orientation": 0,
-    "ocr_confidence": 50.9,
-    "tokens_raw": 18,
-    "tokens_kept": 7,
+    "ocr_confidence": 54.2,
+    "tokens_raw": 53,
+    "tokens_kept": 16,
     "tokens": [
+      "quick",
+      "blocked",
       "nostrosil",
       "ometazoline",
-      "see",
-      "blocked",
+      "eee",
+      "relief",
       "nese",
-      "res",
-      "froni"
+      "froni",
+      "oss",
+      "saw",
+      "pad",
+      "ots"
     ]
   },
   {
@@ -296,21 +322,30 @@
     "expect": [
       "pantoprazole"
     ],
-    "predicted": "progesterone natural micronized 100mg 100mg",
+    "predicted": "aceclofenac 100mg + paracetamol 325mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.0,
+    "probability": 0.167,
     "quality": "degraded",
     "orientation": 0,
-    "ocr_confidence": 54.7,
-    "tokens_raw": 6,
-    "tokens_kept": 3,
+    "ocr_confidence": 52.2,
+    "tokens_raw": 51,
+    "tokens_kept": 17,
     "tokens": [
       "oxig",
       "tic",
-      "ate"
+      "ate",
+      "foret",
+      "pre",
+      "lad",
+      "lacy",
+      "ane",
+      "vod",
+      "leat",
+      "wif",
+      "sorta"
     ]
   },
   {
@@ -324,30 +359,30 @@
     "expect": [
       "paracetamol"
     ],
-    "predicted": "paracetamol 500mg",
+    "predicted": "paracetamol",
     "hit": true,
     "hit_top5": true,
     "representable": true,
     "status": "ambiguous",
-    "probability": 0.515,
+    "probability": 0.419,
     "quality": "good",
     "orientation": 0,
-    "ocr_confidence": 68.8,
-    "tokens_raw": 85,
-    "tokens_kept": 47,
+    "ocr_confidence": 63.9,
+    "tokens_raw": 186,
+    "tokens_kept": 112,
     "tokens": [
-      "sight",
-      "avery",
-      "taka",
-      "patiala",
-      "licensed",
-      "shortest",
-      "without",
-      "industrial",
-      "box",
+      "every",
       "days",
-      "thinning",
-      "mouth"
+      "without",
+      "drugs",
+      "sight",
+      "throat",
+      "asia",
+      "patiala",
+      "owned",
+      "shortest",
+      "taka",
+      "licensed"
     ]
   },
   {
@@ -365,30 +400,30 @@
       "menthol",
       "eucalyptus"
     ],
-    "predicted": "cetirizine 5mg + paracetamol 325mg",
+    "predicted": "serratiopeptidase 10mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.167,
+    "probability": 0.006,
     "quality": "unusable",
     "orientation": 90,
-    "ocr_confidence": 48.8,
-    "tokens_raw": 111,
-    "tokens_kept": 20,
+    "ocr_confidence": 48.5,
+    "tokens_raw": 208,
+    "tokens_kept": 77,
     "tokens": [
-      "pocket",
-      "cough",
-      "relieves",
-      "pack",
+      "ope",
+      "ore",
+      "ate",
       "pee",
-      "cold",
-      "symptoms",
+      "pocket",
+      "pack",
       "bee",
+      "pree",
       "att",
-      "teh",
-      "wth",
-      "ees"
+      "cough",
+      "ris",
+      "teh"
     ]
   },
   {
@@ -409,25 +444,25 @@
     "hit_top5": true,
     "representable": true,
     "status": "confident",
-    "probability": 0.758,
+    "probability": 0.889,
     "quality": "good",
     "orientation": 90,
-    "ocr_confidence": 63.7,
-    "tokens_raw": 70,
-    "tokens_kept": 31,
+    "ocr_confidence": 59.5,
+    "tokens_raw": 140,
+    "tokens_kept": 64,
     "tokens": [
       "titanium",
-      "medicine",
-      "film",
+      "gandhi",
       "coated",
       "tablet",
-      "gandhi",
-      "mois",
       "light",
       "composition",
       "nagar",
-      "cefixime",
-      "trihydrate"
+      "medicine",
+      "transport",
+      "film",
+      "colour",
+      "cefixime"
     ]
   },
   {
@@ -441,19 +476,29 @@
     "expect": [
       "ofloxacin"
     ],
-    "predicted": "ciprofloxacin 500mg",
-    "hit": true,
-    "hit_top5": true,
+    "predicted": "nandrolone decanoate 50mg",
+    "hit": false,
+    "hit_top5": false,
     "representable": true,
     "status": "abstained",
     "probability": 0.006,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 48.1,
-    "tokens_raw": 9,
-    "tokens_kept": 1,
+    "ocr_confidence": 48.6,
+    "tokens_raw": 31,
+    "tokens_kept": 11,
     "tokens": [
-      "civortox"
+      "civortox",
+      "cen",
+      "fee",
+      "wee",
+      "bus",
+      "zoo",
+      "tnd",
+      "sarge",
+      "rat",
+      "bury",
+      "bie"
     ]
   },
   {
@@ -467,25 +512,22 @@
     "expect": [
       "doxepin"
     ],
-    "predicted": "omeprazole",
+    "predicted": "etizolam 0.5mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.006,
+    "probability": 0.0,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 50.6,
-    "tokens_raw": 7,
-    "tokens_kept": 7,
+    "ocr_confidence": 49.7,
+    "tokens_raw": 21,
+    "tokens_kept": 4,
     "tokens": [
-      "wy",
-      "ss",
-      "ee",
-      "eo",
-      "ae",
-      "oe",
-      "es"
+      "ree",
+      "ore",
+      "tens",
+      "tthe"
     ]
   },
   {
@@ -500,26 +542,30 @@
       "esomeprazole",
       "domperidone"
     ],
-    "predicted": "esomeprazole 10mg",
+    "predicted": "domperidone 30mg + esomeprazole 40mg",
     "hit": true,
     "hit_top5": true,
     "representable": true,
-    "status": "abstained",
-    "probability": 0.167,
+    "status": "confident",
+    "probability": 0.986,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 50.0,
-    "tokens_raw": 11,
-    "tokens_kept": 8,
+    "ocr_confidence": 55.3,
+    "tokens_raw": 29,
+    "tokens_kept": 19,
     "tokens": [
       "release",
-      "sustained",
-      "nad",
       "capsules",
-      "see",
-      "fes",
+      "sustained",
+      "esomet-dsr",
+      "magnesium",
       "ned",
-      "esomet"
+      "esomeprazole",
+      "esomot-dsr",
+      "capsutes",
+      "esomet",
+      "nad",
+      "magnestum"
     ]
   },
   {
@@ -538,16 +584,20 @@
     "hit_top5": true,
     "representable": true,
     "status": "abstained",
-    "probability": 0.0,
+    "probability": 0.006,
     "quality": "unusable",
     "orientation": 270,
     "ocr_confidence": 50.0,
-    "tokens_raw": 3,
-    "tokens_kept": 3,
+    "tokens_raw": 7,
+    "tokens_kept": 7,
     "tokens": [
       "an",
       "ee",
-      "al"
+      "al",
+      "ar",
+      "se",
+      "wy",
+      "ay"
     ]
   },
   {
@@ -560,21 +610,24 @@
     "expect": [
       "lamivudine"
     ],
-    "predicted": "letrozole 2.5mg",
-    "hit": false,
-    "hit_top5": false,
+    "predicted": "lamivudine 150mg",
+    "hit": true,
+    "hit_top5": true,
     "representable": true,
-    "status": "abstained",
-    "probability": 0.006,
+    "status": "ambiguous",
+    "probability": 0.419,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 51.8,
-    "tokens_raw": 16,
-    "tokens_kept": 3,
+    "ocr_confidence": 51.4,
+    "tokens_raw": 21,
+    "tokens_kept": 6,
     "tokens": [
-      "eae",
+      "tablets",
       "tabiets",
-      "tabtets"
+      "eae",
+      "tabtets",
+      "lamivudine",
+      "ip.150mq"
     ]
   },
   {
@@ -589,21 +642,30 @@
       "amiloride",
       "chlorthalidone"
     ],
-    "predicted": "chlorthalidone 12.5mg",
+    "predicted": "atenolol 100mg + chlorthalidone 25mg",
     "hit": true,
     "hit_top5": true,
     "representable": true,
-    "status": "confident",
-    "probability": 0.95,
+    "status": "abstained",
+    "probability": 0.25,
     "quality": "good",
     "orientation": 0,
-    "ocr_confidence": 54.0,
-    "tokens_raw": 4,
-    "tokens_kept": 3,
+    "ocr_confidence": 54.8,
+    "tokens_raw": 24,
+    "tokens_kept": 18,
     "tokens": [
       "usp",
       "mite",
-      "chlorthalidone"
+      "chlorthalidone",
+      "atenolol",
+      "cece",
+      "tablets",
+      "taj",
+      "mowy",
+      "cee",
+      "hee",
+      "teal",
+      "peed"
     ]
   },
   {
@@ -618,20 +680,30 @@
     "expect": [
       "paracetamol"
     ],
-    "predicted": "glucosamine 500mg + methyl sulfonyl methane 200mg",
+    "predicted": "labetalol 100mg",
     "hit": false,
-    "hit_top5": false,
+    "hit_top5": true,
     "representable": true,
-    "status": "abstained",
-    "probability": 0.0,
+    "status": "ambiguous",
+    "probability": 0.419,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 48.8,
-    "tokens_raw": 13,
-    "tokens_kept": 2,
+    "ocr_confidence": 49.6,
+    "tokens_raw": 38,
+    "tokens_kept": 13,
     "tokens": [
       "bee",
-      "tai"
+      "lablets",
+      "tai",
+      "farace",
+      "ral",
+      "wey",
+      "bay",
+      "tee",
+      "soe",
+      "lab",
+      "som",
+      "rae"
     ]
   },
   {
@@ -644,21 +716,24 @@
     "expect": [
       "tapentadol"
     ],
-    "predicted": "caffeine 15mg + paracetamol 325mg",
+    "predicted": "sodium picosulfate 5mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.0,
+    "probability": 0.006,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 50.1,
-    "tokens_raw": 3,
-    "tokens_kept": 3,
+    "ocr_confidence": 50.9,
+    "tokens_raw": 15,
+    "tokens_kept": 6,
     "tokens": [
-      "ea",
-      "ng",
-      "ae"
+      "extended",
+      "release",
+      "hig",
+      "tee",
+      "fee",
+      "lal"
     ]
   },
   {
@@ -672,7 +747,7 @@
     "expect": [
       "dasatinib"
     ],
-    "predicted": "levofloxacin 500mg",
+    "predicted": "omega-3 fatty acid 1000mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -680,11 +755,15 @@
     "probability": 0.0,
     "quality": "unusable",
     "orientation": 0,
-    "ocr_confidence": 48.3,
-    "tokens_raw": 6,
-    "tokens_kept": 1,
+    "ocr_confidence": 49.7,
+    "tokens_raw": 19,
+    "tokens_kept": 5,
     "tokens": [
-      "wee"
+      "wee",
+      "cow",
+      "fea",
+      "tty",
+      "ees"
     ]
   },
   {
@@ -702,23 +781,26 @@
     "hit": true,
     "hit_top5": true,
     "representable": true,
-    "status": "confident",
-    "probability": 0.575,
+    "status": "ambiguous",
+    "probability": 0.419,
     "quality": "good",
     "orientation": 0,
-    "ocr_confidence": 56.8,
-    "tokens_raw": 14,
-    "tokens_kept": 9,
+    "ocr_confidence": 63.0,
+    "tokens_raw": 56,
+    "tokens_kept": 36,
     "tokens": [
       "dexamethasone",
       "solution",
       "usp",
-      "freeze",
       "concentrate",
+      "freeze",
       "tablets",
+      "oral",
       "see",
       "pharmacist",
-      "posse"
+      "usual",
+      "package",
+      "dropper"
     ]
   },
   {
@@ -739,13 +821,14 @@
     "probability": 0.419,
     "quality": "good",
     "orientation": 0,
-    "ocr_confidence": 67.7,
-    "tokens_raw": 4,
-    "tokens_kept": 3,
+    "ocr_confidence": 55.7,
+    "tokens_raw": 7,
+    "tokens_kept": 4,
     "tokens": [
-      "tablet",
       "deferasirox",
-      "dispersible"
+      "tablet",
+      "dispersible",
+      "rimini"
     ]
   },
   {
@@ -759,24 +842,30 @@
     "expect": [
       "meropenem"
     ],
-    "predicted": "meropenem 1000mg",
+    "predicted": "meropenem 500mg",
     "hit": true,
     "hit_top5": true,
     "representable": true,
-    "status": "confident",
-    "probability": 0.758,
+    "status": "ambiguous",
+    "probability": 0.515,
     "quality": "unusable",
     "orientation": 0,
-    "ocr_confidence": 48.1,
-    "tokens_raw": 19,
-    "tokens_kept": 6,
+    "ocr_confidence": 51.3,
+    "tokens_raw": 68,
+    "tokens_kept": 38,
     "tokens": [
-      "mer",
-      "meropenem",
-      "opener",
       "injection",
+      "abbo",
+      "meropenem",
+      "package",
+      "foe",
+      "single",
       "mert",
-      "abbo"
+      "rafer",
+      "mer",
+      "wal",
+      "opener",
+      "speer"
     ]
   },
   {
@@ -793,7 +882,7 @@
       "sodium chloride",
       "dextrose"
     ],
-    "predicted": "itraconazole 200mg",
+    "predicted": "sotalol 40mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -801,11 +890,17 @@
     "probability": 0.006,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 50.3,
-    "tokens_raw": 1,
-    "tokens_kept": 1,
+    "ocr_confidence": 49.7,
+    "tokens_raw": 13,
+    "tokens_kept": 7,
     "tokens": [
-      "it"
+      "wee",
+      "eee",
+      "aie",
+      "meme",
+      "reer",
+      "met",
+      "sota"
     ]
   },
   {
@@ -819,19 +914,24 @@
     "expect": [
       "risperidone"
     ],
-    "predicted": "caffeine 30mg + chlorpheniramine 4mg",
+    "predicted": "cinnarizine 25mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
     "status": "abstained",
-    "probability": 0.0,
+    "probability": 0.006,
     "quality": "poor",
     "orientation": 0,
-    "ocr_confidence": 49.2,
-    "tokens_raw": 8,
-    "tokens_kept": 1,
+    "ocr_confidence": 46.2,
+    "tokens_raw": 22,
+    "tokens_kept": 6,
     "tokens": [
-      "dis"
+      "woe",
+      "avs",
+      "een",
+      "caf",
+      "aia",
+      "rey"
     ]
   },
   {
@@ -845,7 +945,7 @@
     "expect": [
       "mebeverine"
     ],
-    "predicted": "serratiopeptidase 10mg",
+    "predicted": "esomeprazole 20mg",
     "hit": false,
     "hit_top5": false,
     "representable": true,
@@ -853,17 +953,22 @@
     "probability": 0.006,
     "quality": "unusable",
     "orientation": 0,
-    "ocr_confidence": 47.2,
-    "tokens_raw": 47,
-    "tokens_kept": 7,
+    "ocr_confidence": 46.8,
+    "tokens_raw": 139,
+    "tokens_kept": 70,
     "tokens": [
-      "wee",
-      "bey",
       "eee",
-      "sey",
       "ses",
-      "sees",
-      "ske"
+      "ety",
+      "wee",
+      "prs",
+      "wey",
+      "pee",
+      "ees",
+      "sore",
+      "aan",
+      "ite",
+      "set"
     ]
   },
   {
@@ -878,30 +983,30 @@
       "amoxycillin",
       "lactic acid bacillus"
     ],
-    "predicted": "progesterone 200mg",
-    "hit": false,
-    "hit_top5": false,
+    "predicted": "amoxycillin 500mg",
+    "hit": true,
+    "hit_top5": true,
     "representable": true,
     "status": "ambiguous",
     "probability": 0.419,
     "quality": "unusable",
     "orientation": 0,
-    "ocr_confidence": 58.8,
-    "tokens_raw": 40,
-    "tokens_kept": 13,
+    "ocr_confidence": 61.2,
+    "tokens_raw": 73,
+    "tokens_kept": 30,
     "tokens": [
       "hard",
-      "capsule",
       "spores",
+      "capsule",
       "gelatin",
       "colour",
+      "excipients",
       "light",
-      "trom",
-      "herd",
+      "direct",
+      "dry",
+      "shells",
       "resistant",
-      "ata",
-      "direc",
-      "contalns"
+      "acid"
     ]
   }
 ]

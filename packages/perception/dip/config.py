@@ -129,6 +129,18 @@ class DipConfig:
     """FFT notch filtering for moire/periodic artefacts. Off by default: it is
     expensive and only matters for scanned or screen-photographed input."""
 
+    # ---- adaptive upscaling ----------------------------------------------
+    adaptive_scale: bool = True
+    """Upscale so glyph height matches what Tesseract's models expect (~30px).
+
+    The largest single source of error on real packaging. Measured across 28
+    real images, median glyph height was 6-11px. On a legible composition panel
+    the same pipeline gave "Amoxycliin Thydrates" at 1x and "Amoxycillin
+    Trihydrate" at 4x — the drug name is unrecoverable at native scale and
+    exact when resampled. See scale.py."""
+
+    target_glyph_height: float = 30.0
+
     # ---- binarization ----------------------------------------------------
     binarize_methods: tuple[BinarizeMethod, ...] = ("sauvola", "otsu", "adaptive_gaussian")
     """Multiple binarizations are produced and all are OCR'd. Sauvola is the
@@ -153,7 +165,14 @@ class DipConfig:
     passes that are looking at sideways text.""" 
 
     max_renditions: int = 9
-    """Hard cap on (binarization x rotation) combinations, for latency."""
+    """Cap on the (binarisation x rotation) fan-out, for latency.
+
+    Bounds the fan-out only. Up to three fixed renditions are appended
+    afterwards and are deliberately not subject to it: the unbinarised
+    greyscale (Tesseract's own thresholding sometimes beats all of ours) and,
+    when adaptive scaling fires, one binarised and one greyscale upscale. Those
+    are the passes that read small print, so capping them away would remove the
+    reason they exist."""
 
     # ---- text region detection -------------------------------------------
     text_detection: bool = True
@@ -191,6 +210,7 @@ class DipConfig:
         """
         return cls(
             detect_orientation=False,
+            adaptive_scale=False,
             denoise=False,
             remove_glare=False,
             normalize_illumination=False,

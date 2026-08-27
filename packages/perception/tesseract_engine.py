@@ -259,7 +259,14 @@ def read_renditions(
         # the image — sparse mode finds scattered label fragments that block
         # mode merges into nonsense, while block mode reads the composition
         # paragraph that sparse mode fragments.
-        for psm in psms:
+        # Upscaled renditions get one page-segmentation mode, not two. They are
+        # the expensive passes (up to 12 MP against ~2 MP native), and PSM_BLOCK
+        # is the right single choice for them: what upscaling exists to recover
+        # is the composition paragraph, which is a uniform block of small print.
+        # Halving their passes is a pure cost saving with no accuracy claim.
+        rendition_psms = (PSM_BLOCK,) if rendition.name.startswith("up") else psms
+
+        for psm in rendition_psms:
             words = _run_tesseract(rendition.image, psm, lang)
             score = _score_words(words)
             if score > best_score:
@@ -313,11 +320,28 @@ def read_renditions(
     combined_text = " ".join(w.text for w in unique)
     token_support = {normalise_token(w.text): w.support for w in unique}
 
+    # Tokens the winning rendition read. Always trusted, regardless of whether
+    # anything else corroborates them.
+    #
+    # This exception exists because pure consensus voting actively destroys the
+    # benefit of the best rendition. Adaptive upscaling exists precisely to read
+    # small print that no other rendition can resolve — "amoxycillin" appears in
+    # the upscaled pass and nowhere else — and a >=2 support rule then discards
+    # exactly those tokens as uncorroborated. Measured: web-image accuracy went
+    # from 7/16 to 6/16 when upscaled renditions were added under a pure
+    # consensus rule, because the tokens they uniquely contributed were filtered
+    # out. The winning rendition is the single most trustworthy source; other
+    # renditions still need corroboration.
+    best_tokens = {
+        normalise_token(w.text) for w in per_rendition.get(best_rendition, []) if w.text
+    }
+
     all_tokens = extract_tokens(combined_text)
     consensus = [
         t
         for t in all_tokens
         if token_support.get(t, 0) >= 2
+        or t in best_tokens
         or (by_token.get(t) is not None and by_token[t].confidence >= 75.0)
     ]
 

@@ -48,7 +48,18 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from . import acquire, binarize, denoise, edges, enhance, glare, morphology, rectify, segment
+from . import (
+    acquire,
+    binarize,
+    denoise,
+    edges,
+    enhance,
+    glare,
+    morphology,
+    rectify,
+    scale as scale_stage,
+    segment,
+)
 from .config import DipConfig
 from .quality import QualityReport, assess
 
@@ -269,6 +280,27 @@ def run(image: bytes | np.ndarray, config: DipConfig | None = None) -> DipResult
 
     processed = gray
 
+    # --- 9b. adaptive upscaling -------------------------------------------
+    # Deliberately here, not at acquisition. The restoration stages — denoise,
+    # glare inpainting, boundary detection, rectification — all work correctly
+    # at native resolution and cost four to sixteen times as much at 4x. Only
+    # binarisation and OCR benefit from the extra pixels, so only they pay.
+    #
+    # And they pay ADDITIVELY, not by replacement. Upscaling the image and then
+    # running the whole fan-out over it took 4.2s per image to 56.6s — a 13x
+    # slowdown, because every binarisation and every rotation then works on 16x
+    # the pixels. The gain came from *one* rendition being legible, not from
+    # sixteen expensive ones. So the upscaled pass is added as a small fixed set
+    # alongside the native fan-out rather than multiplying it.
+    upscaled_gray = None
+    scale_estimate = None
+    if config.adaptive_scale:
+        scale_estimate = scale_stage.estimate(gray, target=config.target_glyph_height)
+        metrics["scale"] = scale_estimate.to_dict()
+        if scale_estimate.applied:
+            upscaled_gray = scale_stage.upscale(gray, scale_estimate.scale)
+            record(f"upscale:{scale_estimate.scale:.1f}x", upscaled_gray)
+
     # --- 10. binarisation fan-out -----------------------------------------
     renditions: list[Rendition] = []
 
@@ -309,6 +341,29 @@ def run(image: bytes | np.ndarray, config: DipConfig | None = None) -> DipResult
         # nearest ~8% is the most text-like.
         renditions.sort(key=lambda r: abs(r.ink_coverage - 0.08))
         renditions = renditions[: config.max_renditions]
+
+    # Upscaled renditions, deliberately few. One binarisation, no rotations —
+    # orientation is already corrected up front, and Sauvola is the measured
+    # default for unevenly-lit packaging. This is where the small print becomes
+    # legible, so it earns its cost; the rest of the fan-out would not.
+    if upscaled_gray is not None:
+        for source_name, source in (("up", upscaled_gray),):
+            mask = binarize.binarize(
+                source, "sauvola", window=config.sauvola_window, sauvola_k=config.sauvola_k
+            )
+            coverage = binarize.ink_coverage(mask)
+            if 0.010 <= coverage <= 0.45:
+                renditions.append(
+                    Rendition(
+                        name=f"{source_name}{scale_estimate.scale:.1f}x:sauvola:rot0",
+                        image=morphology.remove_small_components(mask, min_area=10),
+                        binarize_method="sauvola",
+                        ink_coverage=coverage,
+                    )
+                )
+        renditions.append(
+            Rendition(name=f"up{scale_estimate.scale:.1f}x:none:rot0", image=upscaled_gray)
+        )
 
     # Always include the unbinarised greyscale. Tesseract's own internal
     # thresholding sometimes beats all of ours, and on the `raw` ablation rung

@@ -332,15 +332,29 @@ def test_pipeline_runs_every_ablation_rung():
 def test_pipeline_respects_the_rendition_cap():
     config = DipConfig.full().with_(max_renditions=4)
     result = run(synthetic.encode(synthetic.degraded_strip()[0]), config)
-    # The cap bounds binarised renditions; the raw greyscale is always appended.
-    assert len(result.renditions) <= config.max_renditions + 1
+
+    # The cap bounds the (binarisation x rotation) fan-out. Up to three fixed
+    # renditions are appended outside it: the unbinarised greyscale, plus a
+    # binarised and a greyscale upscale when adaptive scaling fires. Those are
+    # the passes that read small print.
+    fanned = [r for r in result.renditions
+              if not r.name.startswith("up") and r.name != "gray:none:rot0"]
+    extras = [r for r in result.renditions if r not in fanned]
+
+    assert len(fanned) <= config.max_renditions
+    assert len(extras) <= 3
 
 
 def test_raw_preset_does_no_processing():
     result = run(synthetic.encode(synthetic.make_strip()), DipConfig.raw())
+
+    # raw() is the ablation ladder's baseline rung and must be a true no-op:
+    # one rendition, no orientation probe, no upscaling, no denoising.
     assert len(result.renditions) == 1
     assert result.renditions[0].name == "gray:none:rot0"
     assert result.metrics["denoise_method"] == "none"
+    assert result.metrics.get("scale", {}).get("applied", False) is False
+    assert result.metrics.get("orientation", {}).get("detected", False) is False
 
 
 def test_quality_is_measured_before_restoration():
@@ -439,3 +453,76 @@ def test_orientation_is_enabled_for_every_preset_except_raw():
     for preset in (DipConfig.light, DipConfig.fast, DipConfig.full, DipConfig.foil):
         assert preset().detect_orientation is True, preset.__name__
     assert DipConfig.raw().detect_orientation is False
+
+
+# --- adaptive upscaling ---------------------------------------------------
+
+
+def test_glyph_height_estimate_tracks_actual_text_size():
+    """The estimate must respond to text size, not to image size."""
+    from packages.perception.dip.scale import estimate_glyph_height
+    from packages.perception.dip.acquire import to_gray
+
+    small = synthetic.make_strip(font_scale=0.5)
+    large = synthetic.make_strip(font_scale=1.4)
+
+    small_h, small_n = estimate_glyph_height(to_gray(small))
+    large_h, large_n = estimate_glyph_height(to_gray(large))
+
+    assert small_n >= 12 and large_n >= 12
+    assert large_h > small_h
+
+
+def test_scale_estimate_targets_the_requested_glyph_height():
+    from packages.perception.dip.acquire import to_gray
+    from packages.perception.dip.scale import estimate
+
+    gray = to_gray(synthetic.make_strip(font_scale=0.5))
+    result = estimate(gray, target=30.0)
+
+    if result.applied:
+        # Scaling by the returned factor should land the glyphs near target.
+        assert 0.5 <= result.glyph_height * result.scale / 30.0 <= 2.0
+
+
+def test_scale_is_refused_without_enough_glyph_evidence():
+    """Guessing a 5x upscale from four blobs magnifies texture into 'text'."""
+    import numpy as np
+
+    from packages.perception.dip.scale import estimate
+
+    blank = np.full((400, 400), 200, dtype=np.uint8)
+    result = estimate(blank)
+
+    assert result.applied is False
+    assert result.scale == 1.0
+
+
+def test_scale_respects_the_output_pixel_cap():
+    """Cost is bounded. A 16 MP cap made a single image take 56 seconds."""
+    import numpy as np
+
+    from packages.perception.dip.scale import MAX_OUTPUT_PIXELS, estimate, upscale
+    from packages.perception.dip.acquire import to_gray
+
+    gray = to_gray(synthetic.make_strip(width=1800, height=1200, font_scale=0.4))
+    result = estimate(gray)
+
+    scaled = upscale(gray, result.scale)
+    assert scaled.shape[0] * scaled.shape[1] <= MAX_OUTPUT_PIXELS * 1.02
+
+
+def test_upscaled_renditions_are_added_not_multiplied():
+    """Regression test for a 13x slowdown.
+
+    Upscaling the image and then running the whole fan-out over it took the
+    benchmark from 4.2s to 56.6s per image, because every binarisation and
+    rotation then worked on 16x the pixels. The gain came from ONE rendition
+    becoming legible, so the upscaled pass is added as a small fixed set.
+    """
+    config = DipConfig.full()
+    result = run(synthetic.encode(synthetic.make_strip(font_scale=0.45)), config)
+
+    upscaled = [r for r in result.renditions if r.name.startswith("up")]
+    # At most one binarised upscale plus one greyscale upscale.
+    assert len(upscaled) <= 2
