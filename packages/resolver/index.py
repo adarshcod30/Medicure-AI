@@ -132,14 +132,24 @@ class CompositionMatch:
 
     example_rows: list[int] = field(default_factory=list)
 
+    dense_similarity: float | None = None
+    """Cosine similarity from the dense (embedding) index, when fusion ran.
+    None means the lexical stage alone produced this ranking."""
+
+    fused_rank_score: float | None = None
+    """Reciprocal-rank-fusion score, when fusion ran. See resolver/dense.py."""
+
     def to_dict(self) -> dict:
-        return {
+        payload = {
             "composition": self.label,
             "closest_brand": self.best_name,
             "top_similarity": round(self.top_similarity, 4),
             "aggregate_score": round(self.aggregate_score, 4),
             "supporting_brands": self.support,
         }
+        if self.dense_similarity is not None:
+            payload["dense_similarity"] = round(self.dense_similarity, 4)
+        return payload
 
 
 @dataclass

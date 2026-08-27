@@ -98,12 +98,33 @@ class AppState:
                 self.startup_errors.append(f"bedrock unavailable ({kind}): {exc}")
                 logger.warning("bedrock unavailable, continuing without explanations: %s", exc)
 
+        dense_reranker = None
+        if settings.enable_dense_retrieval:
+            try:
+                from packages.resolver.dense import DenseIndex, DenseReranker, TitanEmbedder
+
+                dense_reranker = DenseReranker(
+                    DenseIndex(settings.artifact_dir),
+                    TitanEmbedder(
+                        region=settings.aws_region,
+                        model_id=settings.bedrock_embedding_model_id,
+                        access_key_id=settings.aws_access_key_id,
+                        secret_access_key=settings.aws_secret_access_key,
+                    ),
+                )
+                logger.info("dense retrieval enabled (%d signature vectors)",
+                            len(dense_reranker.index))
+            except Exception as exc:  # noqa: BLE001 — same contract as Bedrock: degrade, report
+                self.startup_errors.append(f"dense retrieval unavailable: {exc}")
+                logger.warning("dense retrieval unavailable, lexical only: %s", exc)
+
         self.orchestrator = Orchestrator(
             index=self.index,
             calibrator=self.calibrator,
             ceiling_table=self.ceiling_table,
             explainer=explainer,
             transcriber=transcriber,
+            dense_reranker=dense_reranker,
         )
 
     async def connect_store(self, settings: Settings) -> None:

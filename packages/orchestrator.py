@@ -72,6 +72,10 @@ class Identification:
             "probability": round(self.probability, 4),
             "calibrated": self.calibrated,
             "composition": self.composition,
+            # JSON-safe list-of-lists, the same shape signature_to_json in
+            # packages/storage/mongo.py produces — the cabinet accepts this
+            # form back verbatim, so the identity round-trips bit-for-bit.
+            "signature": [list(component) for component in self.signature],
             "closest_brand": self.closest_brand,
             "brands_sharing_composition": self.brands_sharing_composition,
             "candidates_considered": self.candidates,
@@ -123,12 +127,18 @@ class Orchestrator:
         ceiling_table: CeilingPriceTable,
         explainer: Any | None = None,
         transcriber: Any | None = None,
+        dense_reranker: Any | None = None,
     ):
         self.index = index
         self.calibrator = calibrator
         self.ceiling_table = ceiling_table
         self.explainer = explainer
         self.transcriber = transcriber
+        self.dense_reranker = dense_reranker
+        """Optional embedding-based reranker over the lexical candidates. It
+        reorders, never introduces — see resolver/dense.py — and any failure
+        inside it degrades to the lexical ranking. Enabled by measurement
+        (eval/bench_dense.py), not by existing."""
         """Optional vision transcriber. Fires only when the quality gate says
         the image is degraded, and produces TEXT ONLY — it never identifies."""
         """Optional. Anything with `.explain(ScanResult) -> dict`. Absent means
@@ -262,6 +272,11 @@ class Orchestrator:
             query.split(), strengths=strengths, top_k=5
         )
         stages["retrieval"] = round((time.perf_counter() - mark) * 1000, 1)
+
+        if self.dense_reranker is not None and matches:
+            mark = time.perf_counter()
+            matches = self.dense_reranker.rerank(query, matches, top_k=5)
+            stages["dense_rerank"] = round((time.perf_counter() - mark) * 1000, 1)
 
         status, probability = self.calibrator.decide(matches, query)
 
