@@ -150,27 +150,23 @@ class Explainer:
     def explain(self, result) -> dict:
         fact_sheet = render_fact_sheet(result)
 
+        instruction = (
+            f"{fact_sheet}\n\n"
+            "Explain this medicine in plain words for someone with no medical background."
+        )
+
+        # Same rule as the system block: guardContent is only accepted when a
+        # guardrail is attached.
+        content = (
+            [{"guardContent": {"text": {"text": instruction}}}]
+            if self.client.guardrail_id
+            else [{"text": instruction}]
+        )
+
         try:
             response = self.client.converse(
                 system=SYSTEM_PROMPT,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "guardContent": {
-                                    "text": {
-                                        "text": (
-                                            f"{fact_sheet}\n\n"
-                                            "Explain this medicine in plain words for someone "
-                                            "with no medical background."
-                                        )
-                                    }
-                                }
-                            }
-                        ],
-                    }
-                ],
+                messages=[{"role": "user", "content": content}],
                 grounding_source=fact_sheet,
                 model_id=self.client.fast_model_id if self.fast else self.client.model_id,
                 max_tokens=600,
@@ -203,6 +199,14 @@ class Explainer:
             "text": response.text,
             "available": True,
             "grounded_against": "fact_sheet",
+            "guardrail_enforced": bool(self.client.guardrail_id),
+            "grounding_note": None
+            if self.client.guardrail_id
+            else (
+                "No Bedrock guardrail is configured, so groundedness rests on the "
+                "prompt contract rather than a mechanical check. Set "
+                "BEDROCK_GUARDRAIL_ID to enforce it."
+            ),
             "model": self.client.fast_model_id if self.fast else self.client.model_id,
             "usage": response.to_dict(),
         }

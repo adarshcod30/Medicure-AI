@@ -226,14 +226,23 @@ class BedrockClient:
             },
         }
 
+        # guardContent blocks are ONLY valid when a guardrail is attached.
+        # Bedrock rejects them otherwise with "The guardrail can't assess the
+        # content in the guardContent field", which is a confusing way to say
+        # "you did not configure a guardrail". Without one the grounding source
+        # still goes to the model — as ordinary system text — so the prompt
+        # contract holds; what is lost is the *mechanical* grounding check.
         if grounding_source:
-            request["system"].append(
-                {
-                    "guardContent": {
-                        "text": {"text": grounding_source, "qualifiers": ["grounding_source"]}
+            if self.guardrail_id:
+                request["system"].append(
+                    {
+                        "guardContent": {
+                            "text": {"text": grounding_source, "qualifiers": ["grounding_source"]}
+                        }
                     }
-                }
-            )
+                )
+            else:
+                request["system"].append({"text": grounding_source})
 
         guardrail = self._guardrail_config()
         if guardrail:
