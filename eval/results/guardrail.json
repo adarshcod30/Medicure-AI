@@ -7,29 +7,78 @@
       "identification": "confident",
       "grounding": 0.61,
       "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Augmentin 625 Duo Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.21,
+      "relevance": 1.0,
       "stop_reason": "guardrail_intervened"
+    },
+    {
+      "drug": "Ecosprin 75 Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.58,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
     },
     {
       "drug": "Dolo 650 Tablet",
       "identification": "ambiguous",
-      "grounding": 0.82,
+      "grounding": 0.84,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Pan 40 Tablet",
       "identification": "ambiguous",
+      "grounding": 0.78,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Azithral 500 Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.79,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Montair LC Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.22,
+      "relevance": 1.0,
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "drug": "Zerodol SP Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.61,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Telma 40 Tablet",
+      "identification": "ambiguous",
       "grounding": 0.68,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Glycomet 500 Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.3,
       "relevance": 1.0,
       "stop_reason": "guardrail_intervened"
     }
   ],
   "pass_rate": {
-    "0.3": 1.0,
-    "0.4": 1.0,
-    "0.5": 1.0,
-    "0.6": 1.0,
-    "0.7": 0.3333333333333333,
-    "0.8": 0.3333333333333333
+    "0.3": 0.8,
+    "0.4": 0.7,
+    "0.5": 0.7,
+    "0.6": 0.6,
+    "0.7": 0.3,
+    "0.8": 0.1
   }
 }
