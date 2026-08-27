@@ -29,11 +29,23 @@ def health() -> dict:
     # `explanations` is False until an invocation has actually succeeded. A
     # constructed client proves nothing — an account without a valid payment
     # instrument builds one fine and then fails every call.
+    storage_health = state.store.status() if state.store else {"available": False, "error": None}
+
     capabilities = {
         "retrieval": state.index is not None,
         "calibrated_confidence": bool(state.calibrator and state.calibrator.is_fitted),
         "price_verification": state.ceiling_table is not None,
         "explanations": bool(bedrock_health and bedrock_health["last_invocation_succeeded"]),
+        # Accounts, history and the cabinet are the only features that need a
+        # database. Reporting them separately from `retrieval` keeps the
+        # distinction visible: a deployment can be fully useful with all three
+        # of these false.
+        "accounts": storage_health["available"],
+        "scan_history": storage_health["available"],
+        "medicine_cabinet": storage_health["available"],
+        "dense_retrieval": bool(
+            state.orchestrator and getattr(state.orchestrator, "dense_reranker", None)
+        ),
     }
 
     degraded = list(state.startup_errors)
@@ -48,6 +60,7 @@ def health() -> dict:
         "capabilities": capabilities,
         "degraded": degraded,
         "bedrock": bedrock_health,
+        "storage": storage_health,
         "environment": settings.environment,
     }
 

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from ..auth import AuthUser, get_current_user_opt
 from ..deps import get_state
+from .scan import record_scan
 
 router = APIRouter()
 
@@ -16,7 +18,10 @@ class SearchRequest(BaseModel):
 
 
 @router.post("/search")
-def search(request: SearchRequest) -> dict:
+async def search(
+    request: SearchRequest,
+    user: AuthUser | None = Depends(get_current_user_opt),
+) -> dict:
     """Medicine name or composition -> the same grounded contract as /scan.
 
     Deliberately identical in shape. The frontend renders one result view, and
@@ -31,7 +36,9 @@ def search(request: SearchRequest) -> dict:
         )
 
     result = state.orchestrator.analyse_text(request.query, explain=request.explain)
-    return result.to_dict()
+    payload = result.to_dict()
+    await record_scan(user, "search", request.query, payload)
+    return payload
 
 
 @router.get("/suggest")
