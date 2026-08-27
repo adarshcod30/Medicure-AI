@@ -83,7 +83,18 @@ class LlmResponse:
 
     @property
     def blocked_by_guardrail(self) -> bool:
-        return self.guardrail_action == "GUARDRAIL_INTERVENED"
+        """Did the guardrail withhold this answer?
+
+        Case-folded deliberately. The Converse API returns `stopReason` as
+        lowercase `guardrail_intervened`, while the InvokeModel-era docs and
+        the console both show `GUARDRAIL_INTERVENED`. Comparing against the
+        upper-case spelling silently returned False for every intervention, so
+        the explainer passed the guardrail's own "withheld" placeholder through
+        as if it were a real explanation — reporting available=True for an
+        answer that had just been blocked. The bug was invisible until a
+        guardrail actually existed to intervene.
+        """
+        return (self.guardrail_action or "").upper() == "GUARDRAIL_INTERVENED"
 
     def to_dict(self) -> dict:
         return {
@@ -290,8 +301,10 @@ class BedrockClient:
             input_tokens=int(usage.get("inputTokens", 0)),
             output_tokens=int(usage.get("outputTokens", 0)),
             stop_reason=response.get("stopReason", ""),
+            # Case-folded on the way in as well, so the two spellings AWS uses
+            # for this value cannot diverge from `blocked_by_guardrail`.
             guardrail_action=response.get("stopReason")
-            if response.get("stopReason") == "guardrail_intervened"
+            if (response.get("stopReason") or "").upper() == "GUARDRAIL_INTERVENED"
             else None,
             latency_ms=latency,
         )

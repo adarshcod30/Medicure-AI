@@ -150,15 +150,28 @@ class Explainer:
     def explain(self, result) -> dict:
         fact_sheet = render_fact_sheet(result)
 
-        instruction = (
-            f"{fact_sheet}\n\n"
+        question = (
             "Explain this medicine in plain words for someone with no medical background."
         )
+        instruction = f"{fact_sheet}\n\n{question}"
 
-        # Same rule as the system block: guardContent is only accepted when a
-        # guardrail is attached.
+        # The contextual grounding filter needs THREE things and names them:
+        # a grounding source, a query, and the content to guard. The source is
+        # attached to the system block by BedrockClient.converse; the query is
+        # this block, and it MUST carry the "query" qualifier. Sending an
+        # unqualified guardContent block instead fails the whole call with
+        # "The provided request does not contain the query", which reads like a
+        # malformed request rather than a missing qualifier.
+        #
+        # Only the question goes here, not the fact sheet: the sheet already
+        # reaches the model through the grounding_source block, and repeating
+        # it inside the query would ask the guardrail to score the answer
+        # against text that is also part of the question.
+        #
+        # guardContent is still only valid when a guardrail is attached, so
+        # without one the whole prompt goes as ordinary text.
         content = (
-            [{"guardContent": {"text": {"text": instruction}}}]
+            [{"guardContent": {"text": {"text": question, "qualifiers": ["query"]}}}]
             if self.client.guardrail_id
             else [{"text": instruction}]
         )

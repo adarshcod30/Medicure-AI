@@ -1,0 +1,35 @@
+{
+  "guardrail_version": "DRAFT",
+  "model": "us.amazon.nova-lite-v1:0",
+  "rows": [
+    {
+      "drug": "Crocin Advance Tablet",
+      "identification": "confident",
+      "grounding": 0.61,
+      "relevance": 1.0,
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "drug": "Dolo 650 Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.82,
+      "relevance": 1.0,
+      "stop_reason": "end_turn"
+    },
+    {
+      "drug": "Pan 40 Tablet",
+      "identification": "ambiguous",
+      "grounding": 0.68,
+      "relevance": 1.0,
+      "stop_reason": "guardrail_intervened"
+    }
+  ],
+  "pass_rate": {
+    "0.3": 1.0,
+    "0.4": 1.0,
+    "0.5": 1.0,
+    "0.6": 1.0,
+    "0.7": 0.3333333333333333,
+    "0.8": 0.3333333333333333
+  }
+}

@@ -36,16 +36,43 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-GROUNDING_THRESHOLD = 0.70
-"""How well a sentence must be supported by the fact sheet to survive.
+GROUNDING_THRESHOLD = 0.50
+"""How well the answer must be supported by the fact sheet to survive.
 
-0.7 rather than higher because the explainer is asked to *rephrase* — "fever
-medicine" for "paracetamol", "painkiller" for "analgesic" — and paraphrase
-scores lower than quotation. Set at 0.9 the filter blocks correct, useful
-plain-English renderings of facts that genuinely are in the source, which
-teaches nothing except to turn the guardrail off."""
+0.70 was the reasoned choice and it was too strict. Measured against the real
+SYSTEM_PROMPT and real fact sheets for 10 catalogue products (trace enabled,
+Nova Lite, maxTokens 600), the grounding scores were:
+
+    0.88  0.80  0.78  0.70  0.68  0.65  0.52  |  0.28  0.27  0.17
+
+    threshold   legitimate explanations passing
+      0.70                4/10
+      0.60                6/10
+      0.50                7/10
+      0.40                7/10
+
+At 0.70 the filter blocked 5 of 7 attempted explanations, including a
+*confident* paracetamol identification — the exact "teaches nothing except to
+turn the guardrail off" failure this constant's previous docstring warned
+about, arrived at from the other direction.
+
+0.50 sits inside the natural gap between 0.52 and 0.28. Below it there is no
+further gain (0.40 passes the same 7), and above it correct plain-English
+renderings start dying. The three that still fail — 0.28, 0.27, 0.17 — are
+outputs where the model padded a thin multi-ingredient fact sheet with its own
+pharmacological knowledge, which is precisely what should be blocked.
+
+The tension is real and worth naming: this explainer is *asked* to paraphrase
+("painkiller" not "analgesic"), and paraphrase scores lower than quotation on
+contextual grounding. A stricter threshold does not buy more safety here, it
+buys fewer answers, because every load-bearing fact is already deterministic
+and the model cannot reach any of them.
+
+Re-measure with: python -m eval.bench_guardrail"""
 
 RELEVANCE_THRESHOLD = 0.70
+"""Left at 0.70. Across the same 10 products relevance scored 1.00 every time
+-- it has never been the binding constraint, so there is nothing to loosen."""
 
 DENIED_TOPICS = [
     {
@@ -134,6 +161,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", default="medicure-grounding")
     parser.add_argument("--dry-run", action="store_true", help="print the config, create nothing")
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="apply this config to an existing guardrail of the same name "
+             "(needed after changing a threshold; the ID does not change)",
+    )
     args = parser.parse_args(argv)
 
     config = build_config(args.name)
@@ -172,9 +205,27 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 1
 
-    if existing:
+    if existing and not args.update:
         print(f"guardrail '{args.name}' already exists: {existing['id']}")
+        print("Re-run with --update to apply the current thresholds to it.")
         print(f"\nBEDROCK_GUARDRAIL_ID={existing['id']}")
+        return 0
+
+    if existing:
+        # Update in place so the ID in .env stays valid. A new guardrail would
+        # mean a new ID and a silently unenforced deployment until someone
+        # noticed .env still pointed at the old one.
+        try:
+            client.update_guardrail(guardrailIdentifier=existing["id"], **config)
+        except Exception as exc:  # noqa: BLE001
+            print(f"error: update_guardrail failed: {exc}", file=sys.stderr)
+            print("The IAM policy needs bedrock:UpdateGuardrail "
+                  "(infra/aws/medicure-setup-policy.json).", file=sys.stderr)
+            return 1
+        print(f"updated guardrail '{args.name}'")
+        print(f"  id      : {existing['id']}")
+        print(f"  grounding threshold {GROUNDING_THRESHOLD}, relevance {RELEVANCE_THRESHOLD}")
+        print(f"\nBEDROCK_GUARDRAIL_ID={existing['id']}   (unchanged)")
         return 0
 
     try:
