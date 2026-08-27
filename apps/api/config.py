@@ -51,17 +51,29 @@ class Settings(BaseSettings):
     # --- Amazon Bedrock ---
     aws_region: str = "us-east-1"
 
-    bedrock_model_id: str = "us.anthropic.claude-sonnet-4-6"
-    """Model for the reasoning and explanation step.
+    bedrock_model_id: str = "us.amazon.nova-pro-v1:0"
+    """Model for the explanation step.
 
-    Verify availability at deploy time with `aws bedrock list-foundation-models
-    --region <region>` — model IDs change between generations, and a wrong one
-    fails at first invocation rather than at startup. The `us.` prefix selects a
-    cross-region inference profile for higher throughput."""
+    Defaults to Amazon Nova rather than Claude for a practical reason: Nova and
+    Titan are **first-party AWS services**, while Anthropic, Meta, Mistral and
+    Cohere models are delivered through **AWS Marketplace subscriptions**. The
+    Marketplace path is what requires a valid payment instrument, so on an
+    account without one the third-party models fail with
+    INVALID_PAYMENT_INSTRUMENT while the first-party ones keep working.
 
-    bedrock_fast_model_id: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-    """Cheaper model for simplification and routing, where the reasoning is
-    trivial but the volume is high."""
+    The choice matters far less here than it would in most systems. This model
+    never produces a fact — it rephrases a fact sheet that retrieval and
+    arithmetic have already filled in, and a Guardrail checks its output against
+    that sheet. Model quality affects how the answer *reads*, not whether it is
+    correct. Swapping families is a one-line change because the Converse API
+    presents one request shape across every provider.
+
+    Verify availability before deploying: `bash infra/aws/probe_models.sh`
+    invokes each candidate for real, since listing a model proves nothing."""
+
+    bedrock_fast_model_id: str = "us.amazon.nova-lite-v1:0"
+    """Cheaper model for the explanation path, where the work is rephrasing
+    rather than reasoning and the volume is high."""
 
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
 

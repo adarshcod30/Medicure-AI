@@ -7,8 +7,8 @@
 
 set -uo pipefail
 REGION="${AWS_REGION:-us-east-1}"
-SONNET="us.anthropic.claude-sonnet-4-6"
-HAIKU="us.anthropic.claude-haiku-4-5-20251001-v1:0"
+SONNET="${BEDROCK_MODEL_ID:-us.amazon.nova-pro-v1:0}"
+HAIKU="${BEDROCK_FAST_MODEL_ID:-us.amazon.nova-lite-v1:0}"
 TITAN="amazon.titan-embed-text-v2:0"
 
 ok()   { printf "  \033[32mOK\033[0m    %s\n" "$1"; }
@@ -47,7 +47,7 @@ else
 fi
 
 # 3 — actual invocation. This is where billing and model access show up.
-for pair in "Sonnet:$SONNET" "Haiku:$HAIKU"; do
+for pair in "primary:$SONNET" "fast:$HAIKU"; do
   label="${pair%%:*}"; model="${pair#*:}"
   out=$(aws bedrock-runtime converse --region "$REGION" --model-id "$model" \
         --messages '[{"role":"user","content":[{"text":"Reply with OK"}]}]' \
