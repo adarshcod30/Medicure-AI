@@ -31,6 +31,16 @@ being fabricated.
 - **Decide with measurements.** Several defaults here (fusion rule, name
   weight, DIP preset routing, contrast metric) were chosen by benchmark after
   the intuitive choice measured worse. Add to `eval/` rather than arguing.
+- **Dense retrieval is off because it lost.** Titan embeddings fused by RRF
+  scored 73.3% top-1 against lexical's 75.3%, collapsing to 8% against 47% on
+  heavily corrupted text — char n-grams degrade gracefully, an embedding does
+  not. The code stays behind `ENABLE_DENSE_RETRIEVAL` with
+  `eval/bench_dense.py` as the evidence. Do not switch it on without rerunning
+  that benchmark.
+- **Storage is optional and must stay that way.** MongoDB absent disables
+  accounts, history and the cabinet, and nothing else. Those routes return 503
+  with an explanation, never 500, and `/v1/health` reports each capability
+  separately.
 
 ## Layout
 
@@ -40,12 +50,15 @@ apps/web/            React (Vite)
 packages/
   perception/dip/    13 DIP modules, each switchable via DipConfig
   perception/        tesseract_engine (consensus fusion)
-  resolver/          normalize · corruption · index · calibrate
-  pharmacology/      price · alternatives          <- no LLM in here, ever
+  resolver/          normalize · corruption · index · calibrate · dense
+  pharmacology/      price · alternatives · lasa · interactions
+                                                   <- no LLM in here, ever
+  storage/           mongo (optional; absent is a supported state)
   reasoning/         bedrock · explainer
   orchestrator.py    wires the stages
 eval/                benchmarks; the differentiation lives here
-scripts/             build_index · fit_calibrator
+scripts/             build_index · fit_calibrator · build_embeddings
+                     ingest_interactions · sync_atlas
 ```
 
 ## After changing anything

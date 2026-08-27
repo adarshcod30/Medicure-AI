@@ -25,9 +25,9 @@ built around six things a language model provably cannot do alone.
 |---|---|---|
 | **C0** | Digital image processing front-end | A model handed a warped, glare-blown blister cannot recover geometry or clipped highlights it never received. A homography and specular inpainting can. |
 | **C1** | Calibrated abstention over 253,973 brands | A model cannot enumerate a proprietary namespace, and is confidently wrong rather than silent. |
-| **C2** | Look-alike/sound-alike detection *(M2)* | Requires scanning the whole brand space for confusable neighbours. |
+| **C2** | Look-alike/sound-alike detection | Requires scanning the whole brand space for confusable neighbours. Thresholds set against the 99th percentile of 4,000 random name pairs. |
 | **C3** | Deterministic NPPA price verification | Ceiling prices change by individual gazette order. No model knows them; asked, it invents them. |
-| **C4** | Interaction and duplicate-therapy checks *(M3)* | Stateful and combinatorial across your persisted medicine cabinet. |
+| **C4** | Interaction and duplicate-therapy checks | Stateful and combinatorial across your persisted medicine cabinet. Findings come from DDInter rows with citations, never from a model. |
 | **C5** | Groundedness enforcement + benchmark | The measurement is the contribution. |
 
 ### The headline number
