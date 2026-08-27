@@ -44,15 +44,26 @@ COPY --from=builder --chown=medicure:medicure /build/scripts ./scripts
 COPY --from=builder --chown=medicure:medicure /build/data ./data
 
 USER medicure
-ENV PYTHONPATH=/app PYTHONUNBUFFERED=1
+
+# PORT is what the runtime asks us to listen on. Cloud Run injects it (8080)
+# and routes nothing to a container listening elsewhere — the revision simply
+# fails its health check with no useful message. The default keeps `docker run`
+# and docker-compose on 8000 as before.
+ENV PYTHONPATH=/app PYTHONUNBUFFERED=1 PORT=8000
 
 EXPOSE 8000
 
 # The index takes a couple of seconds to load, so the check starts late enough
-# not to kill a healthy container during startup.
+# not to kill a healthy container during startup. Cloud Run ignores Docker's
+# HEALTHCHECK and uses its own probes; this is for compose and plain docker.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -fsS http://localhost:8000/v1/health || exit 1
+    CMD curl -fsS "http://localhost:${PORT}/v1/health" || exit 1
 
-# One worker by default. Each worker loads its own copy of the 125 MB index, so
-# on a 2 GB instance a second worker costs more than it returns.
-CMD ["python", "-m", "uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Shell form so ${PORT} expands, and `exec` so uvicorn becomes PID 1 and
+# receives SIGTERM directly. Without exec, the shell holds PID 1, swallows the
+# signal, and every deploy waits out the full termination grace period before
+# the old revision dies.
+#
+# One worker. Each worker loads its own copy of the 125 MB index, so on a 2 GB
+# instance a second worker costs more than it returns.
+CMD exec python -m uvicorn apps.api.main:app --host 0.0.0.0 --port "${PORT}" --workers 1

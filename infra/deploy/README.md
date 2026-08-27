@@ -5,11 +5,18 @@ Three paths, in the order most people should try them.
 | path | cost | always on | setup | when it fits |
 |---|---|---|---|---|
 | **Cloudflare Tunnel** | ₹0 | no — dies with your terminal | ~5 min | demos, a viva, sharing a link for an afternoon |
+| **Cloud Run + Vercel** | ~₹11/mo | yes, scales to zero | ~30 min | a link in a CV or README |
 | **Docker Compose** | ₹0 local | while the host is up | ~15 min + image build | a spare machine, a lab box, a Pi you leave on |
-| **EC2 t4g.small (CDK)** | ~₹1,100–1,400/mo | yes | ~30 min | anything real users depend on |
+| **EC2 t4g.small (CDK)** | ~₹1,100–1,400/mo | yes, always warm | ~30 min | when cold starts are unacceptable |
 
 Start at the top. The tunnel is genuinely enough for showing the project to
-someone, and it costs nothing to abandon.
+someone, and it costs nothing to abandon. Cloud Run is the one to put in a CV:
+free at this traffic, always reachable, at the price of a 15-40s cold start.
+
+- [cloudflare-tunnel.md](cloudflare-tunnel.md) — the ₹0 demo path
+- [cloud-run.md](cloud-run.md) — the API, always on and free
+- [vercel.md](vercel.md) — the frontend, free
+- [../aws/cdk/README.md](../aws/cdk/README.md) — EC2, when warm matters
 
 ## What has to travel with the app
 

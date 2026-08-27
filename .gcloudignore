@@ -1,0 +1,42 @@
+# What `gcloud builds submit` uploads as the build context.
+#
+# gcloud falls back to .gitignore when this file is absent, which would work
+# but would also upload apps/web (175 MB of node_modules and frontend source)
+# that the API image never copies. Being explicit keeps the upload near 40 MB
+# and every build noticeably faster.
+#
+# The Dockerfile needs exactly: pyproject.toml, packages/, apps/api/, scripts/,
+# and data/processed/*.csv — the catalogues it builds the index from.
+
+.git/
+.gitignore
+
+# The frontend deploys to Vercel; the API image does not contain it.
+apps/web/
+
+# Not needed to build or run the service.
+tests/
+eval/
+docs/
+infra/
+NOTES.md
+README.md
+
+# Large, derived, or not ours to redistribute. data/processed/*.csv IS
+# uploaded: scripts/build_index.py needs it at image-build time.
+data/raw/
+data/artifacts/
+data/processed/interactions/
+
+# Local junk
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.DS_Store
+.env
+*.bak
+out/
+stages/
