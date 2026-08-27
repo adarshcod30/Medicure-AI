@@ -37,9 +37,9 @@ fi
 
 # 2 — Bedrock control plane
 if aws bedrock list-foundation-models --region "$REGION" >/dev/null 2>&1; then
-  n=$(aws bedrock list-foundation-models --region "$REGION" --by-provider anthropic \
+  n=$(aws bedrock list-foundation-models --region "$REGION" --by-provider amazon \
       --query 'length(modelSummaries)' --output text 2>/dev/null)
-  ok "Bedrock reachable   ($n Anthropic models listed)"
+  ok "Bedrock reachable   ($n Amazon models listed)"
 else
   bad "cannot list Bedrock models"
   info "Fix: attach infra/aws/medicure-bedrock-policy.json to this identity."
@@ -55,9 +55,11 @@ for pair in "primary:$SONNET" "fast:$HAIKU"; do
   if echo "$out" | grep -qi "ok"; then
     ok "$label invocable      ($model)"
   elif echo "$out" | grep -q "INVALID_PAYMENT_INSTRUMENT"; then
-    bad "$label BLOCKED       no valid payment method on the account"
-    info "This is a BILLING setting, not a Bedrock permission or model access."
-    info "Fix: console.aws.amazon.com/billing/home#/paymentpreferences"
+    bad "$label BLOCKED       AWS Marketplace subscription refused"
+    info "Seen on AISPL (AWS India, INR billing) accounts even with a valid card."
+    info "Nova is first-party AWS and should NOT hit this — if it does, the"
+    info "account has a broader Marketplace restriction. Check:"
+    info "  console.aws.amazon.com/billing/home#/paymentpreferences"
     exit 1
   elif echo "$out" | grep -q "AccessDenied"; then
     bad "$label access denied"

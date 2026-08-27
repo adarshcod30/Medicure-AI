@@ -74,6 +74,8 @@ class AppState:
                     temperature=settings.bedrock_temperature,
                     guardrail_id=settings.bedrock_guardrail_id,
                     guardrail_version=settings.bedrock_guardrail_version,
+                    access_key_id=settings.aws_access_key_id,
+                    secret_access_key=settings.aws_secret_access_key,
                 )
                 explainer = Explainer(self.bedrock)
                 logger.info("bedrock explainer enabled (%s)", settings.bedrock_fast_model_id)

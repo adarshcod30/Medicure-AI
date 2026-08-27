@@ -51,6 +51,17 @@ class Settings(BaseSettings):
     # --- Amazon Bedrock ---
     aws_region: str = "us-east-1"
 
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    """Optional explicit credentials, read from .env.
+
+    Normally boto3's default chain (environment, ~/.aws/credentials, instance
+    role) is the right thing and these stay empty. They exist because
+    pydantic-settings reads .env into this object WITHOUT exporting to
+    os.environ, so keys placed in .env are invisible to boto3 unless passed
+    through explicitly. Silently falling back to a different identity than the
+    one in .env is a confusing failure, so the wiring is made explicit."""
+
     bedrock_model_id: str = "us.amazon.nova-pro-v1:0"
     """Model for the explanation step.
 

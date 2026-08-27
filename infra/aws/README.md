@@ -1,127 +1,98 @@
 # AWS setup for MediCure
 
-Four steps, in this order. Step 1 is the actual blocker — the other three are
-quick and none of them will work until it is done.
+You create the IAM user and paste two keys into `.env`. Everything else is
+already wired.
 
-## 0. First, find out what actually works
+## Why Amazon Nova and not Claude
 
-    bash infra/aws/probe_models.sh
+Anthropic models on Bedrock are subscribed through **AWS Marketplace**. This
+project's account is an **AISPL** account — Amazon Web Services India Private
+Limited, billing in INR — and every Converse call to Claude returned:
 
-Listing a model proves nothing — an account with no payment instrument lists
-every model and invokes none of them. The probe calls each candidate for real.
+    AccessDeniedException: Model access is denied due to
+    INVALID_PAYMENT_INSTRUMENT. Your AWS Marketplace subscription for this
+    model cannot be completed at this time.
 
-**An IAM user does not fix INVALID_PAYMENT_INSTRUMENT.** That error is a
-property of the *account*, not of the identity calling it, so a new IAM user on
-the same account hits the identical wall.
+...despite a valid Visa being on file and set as default. The blocker is the
+Marketplace subscription path on the India reseller entity, not the card.
 
-But the model family matters, and the error message says why:
+**Amazon Nova is first-party AWS.** No Marketplace subscription is involved, so
+this class of failure does not apply. It is also multimodal, which the vision
+transcription path needs, and cheaper than Claude for this workload.
 
-> Your **AWS Marketplace subscription** for this model cannot be completed.
+| Role | Model | Used for |
+|---|---|---|
+| Primary | `us.amazon.nova-pro-v1:0` | Vision transcription, harder reasoning |
+| Fast | `us.amazon.nova-lite-v1:0` | Explanation — rephrasing retrieved facts |
+| Embeddings | `amazon.titan-embed-text-v2:0` | M3 vector search |
 
-Anthropic, Meta, Mistral and Cohere models on Bedrock are delivered through AWS
-Marketplace subscriptions, and it is the Marketplace path that requires a
-payment instrument. **Amazon Nova and Titan are first-party AWS services and do
-not go through Marketplace at all.** They may work on an account where Claude
-does not — which is why the defaults are now Nova.
-
-If the probe shows Nova working, you can skip step 1 entirely and set the
-access keys as described in step 4.
-
-## 1. Add a payment method — only if the probe shows nothing working
-
-`INVALID_PAYMENT_INSTRUMENT` is an **account billing state**, not a Bedrock
-permission and not a model-access setting.
-
-  https://console.aws.amazon.com/billing/home#/paymentpreferences
-
-Add a card and set it as default. Wait ~2 minutes; the error message says so
-explicitly and it is accurate.
-
-Cost for this project is small: a scan is ~3-6k input / 800 output tokens, so
-500 scans/month on a Haiku+Sonnet mix is roughly **$2-6/month**. Embedding a
-20k-chunk corpus with Titan is a one-time ~$0.10.
-
-## 2. Confirm Bedrock model access
-
-  https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess
-
-Enable, at minimum:
-- Amazon Nova Pro and Nova Lite  (first-party; the current defaults)
-- Titan Text Embeddings V2       (needed for M3 vector search)
-
-Claude, Llama and Mistral are optional. They are better models, but they route
-through Marketplace and so depend on billing being resolved.
-
-**Regional gotcha:** the `us.` model IDs are *cross-region inference profiles*
-that route across us-east-1, us-east-2 and us-west-2. Access granted in only one
-of those can still fail when the profile routes elsewhere. Enable in all three
-if a model works intermittently.
-
-## 3. Stop using root
-
-The current identity is `arn:aws:iam::104422508395:root`. Root has no
-restrictions, cannot be scoped, and its keys cannot be safely rotated.
+## Step 1 — create the IAM user
 
   https://console.aws.amazon.com/iam/home#/users
 
-1. Create user `medicure-dev`, no console access.
-2. Attach a customer-managed policy from `medicure-bedrock-policy.json` in this
-   directory. It grants Claude and Titan invocation and nothing else — no S3,
-   no IAM, no ability to spend outside Bedrock.
-3. Create an access key, choosing "Application running outside AWS".
+1. **Create user** → name `medicure-dev` → do **not** tick console access.
+2. **Next** → *Attach policies directly* → **Create policy** (opens a new tab).
+3. Choose the **JSON** tab, replace everything with the contents of
+   `infra/aws/medicure-bedrock-policy.json`, and name it
+   `MedicureBedrockAccess`.
+4. Back in the user tab, refresh the policy list, tick `MedicureBedrockAccess`,
+   and create the user.
 
-## 4. Configure credentials locally
+The policy grants Nova and Titan invocation, model discovery and
+`ApplyGuardrail`. Nothing else — no S3, no IAM, no ability to spend outside
+Bedrock. If the keys leak, the blast radius is a Bedrock bill.
 
-Run this yourself — never paste a secret key into a chat, a file, or a commit:
+## Step 2 — create an access key
 
-    aws configure --profile medicure
+Open the user → **Security credentials** → **Create access key** → choose
+*Application running outside AWS* → Create.
 
-Region `us-east-1`, output `json`. Then:
+Copy both values now; the secret is shown once.
 
-    export AWS_PROFILE=medicure
+## Step 3 — enable model access
 
-Or put the keys in `.env` instead, which the app reads directly:
+  https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess
 
-    AWS_ACCESS_KEY_ID=...
-    AWS_SECRET_ACCESS_KEY=...
+Enable **Nova Pro**, **Nova Lite**, and **Titan Text Embeddings V2**. Amazon's
+own models are usually granted instantly.
+
+Regional note: `us.` IDs are cross-region inference profiles routing across
+us-east-1 / us-east-2 / us-west-2. If a model works intermittently, enable it
+in all three.
+
+## Step 4 — put the keys in .env
+
+    cp .env.example .env
+
+Then edit `.env` and fill in:
+
     AWS_REGION=us-east-1
+    AWS_ACCESS_KEY_ID=AKIA...
+    AWS_SECRET_ACCESS_KEY=...
+    ENABLE_BEDROCK=true
 
-`.env` is gitignored. Never commit it, and never paste a secret key into a chat
-or an issue.
+`.env` is gitignored and will not be committed. Never paste the secret into a
+chat, an issue, or a commit message.
 
-`aws login` also works but issues **short-lived** credentials that expire
-mid-session — which is what has been happening. A configured profile persists.
+**This works** — the app reads these explicitly and passes them to boto3.
+pydantic-settings loads `.env` into the settings object *without* exporting to
+`os.environ`, so boto3's default chain cannot see them; `BedrockClient` takes
+them as arguments instead. `/v1/health` reports `credential_source: "env"` when
+they are being used, so there is no ambiguity about which identity is active.
 
-## Verify
+## Step 5 — verify
 
     bash infra/aws/verify.sh
 
-It checks credentials, Bedrock reachability, actual invocation of both models,
-and Titan embeddings — stopping at the first real blocker so the output names
-one thing to fix rather than a wall of red.
+Checks credentials, Bedrock reachability, actual invocation of both Nova
+models, and Titan embeddings. It stops at the first real blocker and names the
+specific fix.
 
-## Then
+Then:
 
     ENABLE_BEDROCK=true uvicorn apps.api.main:app --port 8000
-    curl localhost:8000/v1/health
+    curl localhost:8000/v1/health | python3 -m json.tool
 
 `capabilities.explanations` flips to `true` only after a real invocation
-succeeds — a constructed client proves nothing, since an account without a
-payment method builds one happily and then fails every call.
-
-
-## Which model to use
-
-The defaults are Amazon Nova. Set `BEDROCK_MODEL_ID` and `BEDROCK_FAST_MODEL_ID`
-in `.env` to whatever the probe reports as working.
-
-Model choice matters less here than in most systems, and that is by design. The
-model never produces a fact — it rephrases a fact sheet that retrieval and
-arithmetic have already filled in, and a Guardrail checks its output against
-that sheet. A weaker model produces a clumsier sentence, not a wrong price.
-
-Swapping families costs one line because the client uses the **Converse API**,
-which presents a single request shape across every provider. Moving the whole
-system from Claude to Nova touched one default parameter and two config lines.
-Under `InvokeModel` it would have meant rewriting the request body for a
-different provider schema.
+succeeds. A constructed client proves nothing — that was the whole lesson of
+the Claude failure.

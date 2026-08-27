@@ -108,6 +108,8 @@ class BedrockClient:
         temperature: float = 0.0,
         guardrail_id: str = "",
         guardrail_version: str = "DRAFT",
+        access_key_id: str = "",
+        secret_access_key: str = "",
     ):
         if not BOTO3_AVAILABLE:
             raise BedrockUnavailable("boto3 is not installed")
@@ -139,6 +141,21 @@ class BedrockClient:
         # the whole service down at startup, which is precisely the opposite of
         # the design: identification, price checks and abstention are all
         # deterministic and must keep working when the LLM layer does not.
+        # Explicit credentials only when .env supplied them. pydantic-settings
+        # reads .env into the Settings object without exporting to os.environ,
+        # so keys placed there are invisible to boto3's default chain — the
+        # client would silently authenticate as whatever `aws configure` last
+        # left behind, which is a confusing way to fail.
+        credentials = {}
+        if access_key_id and secret_access_key:
+            credentials = {
+                "aws_access_key_id": access_key_id,
+                "aws_secret_access_key": secret_access_key,
+            }
+            self.credential_source = "env"
+        else:
+            self.credential_source = "default_chain"
+
         try:
             self._client = boto3.client(
                 "bedrock-runtime",
@@ -148,6 +165,7 @@ class BedrockClient:
                     connect_timeout=5,
                     read_timeout=60,
                 ),
+                **credentials,
             )
         except Exception as exc:  # noqa: BLE001 - see above
             raise BedrockUnavailable(
@@ -303,6 +321,7 @@ class BedrockClient:
             "model": self.model_id,
             "fast_model": self.fast_model_id,
             "guardrail": bool(self.guardrail_id),
+            "credential_source": self.credential_source,
             "last_invocation_succeeded": self.last_success,
             "last_error": self.last_error,
         }
