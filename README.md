@@ -32,22 +32,39 @@ built around six things a language model provably cannot do alone.
 
 ### The headline number
 
-300 held-out queries, all of them corrupted OCR, stratified by severity:
+150 held-out corrupted-OCR queries. **Both arms graded identically**, on
+ingredient overlap — the raw LLM is Amazon Nova Pro on the same inputs with no
+retrieval:
 
-| | MediCure |
-|---|---|
-| Accuracy, answering everything | 74.3% |
-| Answered (coverage) | 82.7% |
-| Precision when it answers | 89.9% |
-| **Silent failure — confidently wrong** | **4.3%** |
-| Coverage at 95% precision | 63.3% |
-| Expected calibration error | 0.049 |
-| Median latency | 64 ms |
+| | MediCure | Raw LLM |
+|---|---|---|
+| Accuracy (answering everything) | **88.7%** | 86.7% |
+| Answered (coverage) | 82.7% | 95.3% |
+| Precision when it answers | **97.6%** | 90.9% |
+| Abstained | 17.3% | 4.7% |
+| **Silent failure — confidently wrong** | **0.0%** | **8.7%** |
+| Coverage at 95% precision | **90.7%** | 82.7% |
+| Exact composition signature | 68.7% | n/a |
+| Median latency | **63 ms** | 727 ms |
 
-Silent failure is the number that matters clinically. A wrong answer delivered
-confidently is one the patient has no way to catch. A frontier model on these
-same inputs answers ~100% of the time, so *its* silent-failure rate is
-whatever its error rate is.
+**Zero silent failures against 8.7%** is the result. Accuracy is close — the
+model is good, and pretending otherwise would be dishonest — but it answers
+95.3% of the time and is confidently wrong on roughly one query in eleven, with
+no way for a patient to tell which. MediCure declines 17.3% of the time and is
+right on 97.6% of what it does answer.
+
+Two things stated plainly:
+
+- **The LLM's ECE is better** (0.096 against 0.183). MediCure's is measured
+  against the shared overlap rule while its calibrator was fitted to predict
+  *exact signature* correctness, so the two are not measuring the same event.
+  The calibration report has the figure against what it was actually trained on.
+- **An earlier version of this table was wrong**, and in MediCure's favour it
+  would have been easy to leave. MediCure was graded on exact signature match
+  while the LLM was graded on token overlap — one arm had to be exactly right,
+  the other only had to say "paracetamol" somewhere. Under that asymmetry the
+  LLM appeared to *win* 84.7% to 68.7%. Comparing two systems means grading
+  them the same way.
 
 The severity breakdown is where the behaviour shows:
 

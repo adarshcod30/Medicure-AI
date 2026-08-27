@@ -1,64 +1,110 @@
 {
-  "samples": 200,
+  "samples": 150,
   "seed": 42,
   "arms": [
     {
       "name": "MediCure (retrieval + calibrated abstention)",
-      "n": 200,
-      "correct": 140,
-      "answered": 167,
-      "abstained": 33,
-      "wrong_and_confident": 15,
-      "ece": 0.0546,
+      "n": 150,
+      "correct": 133,
+      "correct_and_answered": 121,
+      "answered": 124,
+      "abstained": 26,
+      "wrong_and_confident": 0,
+      "exact_signature": 103,
+      "ece": 0.1831,
       "coverage": {
         "p90": {
           "achievable": true,
-          "coverage": 0.7,
-          "precision": 0.9,
-          "threshold": 0.575,
-          "answered": 140,
-          "total": 200
+          "coverage": 0.9667,
+          "precision": 0.9034,
+          "threshold": 0.0061,
+          "answered": 145,
+          "total": 150
         },
         "p95": {
           "achievable": true,
-          "coverage": 0.64,
-          "precision": 0.9531,
-          "threshold": 0.6667,
-          "answered": 128,
-          "total": 200
+          "coverage": 0.9067,
+          "precision": 0.9559,
+          "threshold": 0.04,
+          "answered": 136,
+          "total": 150
         },
         "p99": {
           "achievable": true,
-          "coverage": 0.47,
-          "precision": 1.0,
-          "threshold": 0.95,
-          "answered": 94,
-          "total": 200
+          "coverage": 0.7933,
+          "precision": 0.9916,
+          "threshold": 0.4189,
+          "answered": 119,
+          "total": 150
         }
       },
       "by_severity": {
         "heavy": {
-          "n": 66,
-          "accuracy": 0.3485,
-          "coverage": 0.5455
+          "n": 50,
+          "accuracy": 0.68,
+          "coverage": 0.52
         },
         "light": {
-          "n": 67,
-          "accuracy": 0.9552,
+          "n": 50,
+          "accuracy": 1.0,
           "coverage": 1.0
         },
         "moderate": {
-          "n": 67,
-          "accuracy": 0.791,
-          "coverage": 0.9552
+          "n": 50,
+          "accuracy": 0.98,
+          "coverage": 0.96
         }
       },
       "notes": [],
-      "accuracy": 0.7,
-      "precision_when_answering": 0.8383,
-      "coverage_rate": 0.835,
-      "silent_failure_rate": 0.075,
-      "median_latency_ms": 63.4
+      "accuracy": 0.8867,
+      "precision_when_answering": 0.9758,
+      "coverage_rate": 0.8267,
+      "silent_failure_rate": 0.0,
+      "median_latency_ms": 63.0
+    },
+    {
+      "name": "Raw LLM (no retrieval)",
+      "n": 150,
+      "correct": 130,
+      "correct_and_answered": 130,
+      "answered": 143,
+      "abstained": 7,
+      "wrong_and_confident": 13,
+      "exact_signature": 0,
+      "ece": 0.0963,
+      "coverage": {
+        "p90": {
+          "achievable": true,
+          "coverage": 0.96,
+          "precision": 0.9028,
+          "threshold": 0.1,
+          "answered": 144,
+          "total": 150
+        },
+        "p95": {
+          "achievable": true,
+          "coverage": 0.8267,
+          "precision": 0.9516,
+          "threshold": 0.7,
+          "answered": 124,
+          "total": 150
+        },
+        "p99": {
+          "achievable": true,
+          "coverage": 0.7267,
+          "precision": 0.9908,
+          "threshold": 0.75,
+          "answered": 109,
+          "total": 150
+        }
+      },
+      "by_severity": {},
+      "notes": [],
+      "accuracy": 0.8667,
+      "precision_when_answering": 0.9091,
+      "coverage_rate": 0.9533,
+      "silent_failure_rate": 0.0867,
+      "median_latency_ms": 727.3
     }
   ]
 }

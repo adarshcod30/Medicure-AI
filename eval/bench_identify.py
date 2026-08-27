@@ -55,9 +55,19 @@ class ArmResult:
     name: str
     n: int = 0
     correct: int = 0
+    correct_and_answered: int = 0
+    """Correct AND not abstained. Separate from `correct` because a system can
+    reach the right answer and still decline to give it — those cases count
+    toward accuracy but must NOT count toward precision-when-answering."""
+
     answered: int = 0
     abstained: int = 0
     wrong_and_confident: int = 0
+    exact_signature: int = 0
+    """Exact composition-signature matches. A stricter bar than the shared
+    grading rule, and only meaningful for the retrieval arm — reported so the
+    generous shared rule does not hide what the system actually resolves."""
+
     latency_ms: list[float] = field(default_factory=list)
     ece: float | None = None
     coverage: dict = field(default_factory=dict)
@@ -71,7 +81,15 @@ class ArmResult:
 
     @property
     def precision_when_answering(self) -> float:
-        return self.correct / self.answered if self.answered else 0.0
+        """Of the answers actually given, how many were right.
+
+        Uses `correct_and_answered`, not `correct`. Dividing total correct by
+        total answered produced 107.3% in an earlier run — the system had
+        abstained on queries it would have got right, so the numerator counted
+        cases the denominator excluded. An impossible percentage is a useful
+        bug: it surfaced immediately instead of quietly inflating the number.
+        """
+        return self.correct_and_answered / self.answered if self.answered else 0.0
 
     @property
     def coverage_rate(self) -> float:
@@ -148,6 +166,29 @@ def build_queries(index, n_samples: int, seed: int) -> list[dict]:
     return queries
 
 
+def ingredient_overlap(truth_composition: str, claimed: str) -> bool:
+    """Do two composition strings share an active ingredient?
+
+    The SHARED grading rule for both arms.
+
+    An earlier version graded MediCure on exact composition-signature equality
+    while grading the LLM on token overlap, on the reasoning that a model
+    without the index vocabulary should not be penalised for failing to emit
+    `(('paracetamol', 500.0, 'mg', None),)`. That is a fair instinct and it
+    produced an unfair table: the LLM appeared to beat MediCure 84.7% to 68.7%,
+    because one arm had to be exactly right and the other only had to say
+    "paracetamol" somewhere.
+
+    Comparing two systems means grading them the same way. Tokens shorter than
+    four characters are ignored — "and", "ip", "mg" match everything.
+    """
+    truth_tokens = {
+        t for t in truth_composition.lower().replace("+", " ").split() if len(t) > 3
+    }
+    claimed_tokens = {t for t in claimed.lower().replace("+", " ").split() if len(t) > 3}
+    return bool(truth_tokens & claimed_tokens)
+
+
 def run_medicure(index, calibrator, queries: list[dict]) -> ArmResult:
     arm = ArmResult(name="MediCure (retrieval + calibrated abstention)", n=len(queries))
     probabilities: list[float] = []
@@ -160,7 +201,12 @@ def run_medicure(index, calibrator, queries: list[dict]) -> ArmResult:
         status, probability = calibrator.decide(matches, item["query"])
         arm.latency_ms.append((time.perf_counter() - started) * 1000)
 
-        is_correct = bool(matches) and matches[0].signature == item["truth_signature"]
+        # Graded by ingredient overlap, identically to the LLM arm. Exact
+        # signature accuracy is reported separately below.
+        is_correct = bool(matches) and ingredient_overlap(
+            item["truth_composition"], matches[0].label
+        )
+        exact = bool(matches) and matches[0].signature == item["truth_signature"]
         answered = status in {"confident", "ambiguous"}
 
         probabilities.append(probability)
@@ -170,10 +216,13 @@ def run_medicure(index, calibrator, queries: list[dict]) -> ArmResult:
             arm.correct += 1
         if answered:
             arm.answered += 1
+            arm.correct_and_answered += int(is_correct)
             if not is_correct and status == "confident":
                 arm.wrong_and_confident += 1
         else:
             arm.abstained += 1
+
+        arm.exact_signature += int(exact)
 
         bucket = severity.setdefault(item["severity"], {"n": 0, "correct": 0, "answered": 0})
         bucket["n"] += 1
@@ -231,6 +280,8 @@ def run_llm_baseline(queries: list[dict], settings) -> ArmResult:
             fast_model_id=settings.bedrock_fast_model_id,
             max_tokens=200,
             temperature=0.0,
+            access_key_id=settings.aws_access_key_id,
+            secret_access_key=settings.aws_secret_access_key,
         )
     except BedrockUnavailable as exc:
         arm.notes.append(f"baseline skipped: {exc}")
@@ -256,14 +307,7 @@ def run_llm_baseline(queries: list[dict], settings) -> ArmResult:
         claimed = str(parsed.get("composition", "")).strip().lower()
         confidence = float(parsed.get("confidence") or 0.0)
 
-        # Graded generously: any overlap of ingredient tokens with the truth
-        # counts as correct. Exact signature matching would be unfair to a
-        # system that was never given the vocabulary.
-        truth_tokens = {
-            t for t in item["truth_composition"].lower().replace("+", " ").split() if len(t) > 3
-        }
-        claimed_tokens = {t for t in claimed.replace("+", " ").split() if len(t) > 3}
-        is_correct = bool(truth_tokens & claimed_tokens)
+        is_correct = ingredient_overlap(item["truth_composition"], claimed)
 
         answered = bool(claimed)
         probabilities.append(confidence)
@@ -273,6 +317,7 @@ def run_llm_baseline(queries: list[dict], settings) -> ArmResult:
             arm.correct += 1
         if answered:
             arm.answered += 1
+            arm.correct_and_answered += int(is_correct)
             if not is_correct and confidence >= 0.5:
                 arm.wrong_and_confident += 1
         else:
@@ -303,6 +348,10 @@ def render(arms: list[ArmResult]) -> str:
     row("SILENT FAILURE (conf. wrong)", lambda a: f"{a.silent_failure_rate:.1%}")
     row("calibration error (ECE)", lambda a: f"{a.ece:.3f}" if a.ece is not None else "-")
     row(
+        "exact composition signature",
+        lambda a: f"{a.exact_signature / a.n:.1%}" if a.exact_signature else "n/a",
+    )
+    row(
         "coverage @ 95% precision",
         lambda a: (
             f"{a.coverage.get('p95', {}).get('coverage', 0):.1%}"
@@ -326,6 +375,15 @@ def render(arms: list[ArmResult]) -> str:
         for note in arm.notes:
             lines.append(f"  note: {note}")
 
+    lines.append("")
+    lines.append("NOTE: MediCure's ECE is computed against the shared overlap rule, while its")
+    lines.append("calibrator was fitted to predict EXACT signature correctness. The two differ,")
+    lines.append("so this ECE understates its calibration. See the calibration report for the")
+    lines.append("figure measured against what it was actually trained on.")
+    lines.append("")
+    lines.append("Both arms are graded identically, on ingredient overlap. 'Exact composition")
+    lines.append("signature' is a stricter bar the LLM arm is not expected to clear and is")
+    lines.append("shown only so the generous shared rule does not hide what retrieval resolves.")
     lines.append("")
     lines.append("Silent failure is the number that matters clinically: a wrong answer given")
     lines.append("confidently is one the user has no way to catch.")
