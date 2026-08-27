@@ -253,3 +253,61 @@ def test_real_ceiling_table_reports_its_own_coverage():
     assert 0.0 < coverage["ceiling_coverage"] < 1.0
     # The known gap: no notification is recorded for any row.
     assert coverage["notification_coverage"] == 0.0
+
+
+@requires_index
+def test_a_jan_aushadhi_product_is_told_it_is_already_the_cheap_one():
+    """"Nothing is cheaper" is the same sentence for opposite situations.
+
+    Someone holding an overpriced brand nobody undercuts and someone holding
+    the government's own low-cost generic both get "no cheaper alternative
+    exists" — and those call for opposite reactions. A Jan Aushadhi strip is
+    the answer the affordability feature exists to point people toward.
+
+    Case from photo_07: an unbranded Jan Aushadhi strip, catalogue code 603,
+    Rs 1.75/tablet, with zero branded products sharing its composition.
+    """
+    from packages.resolver.normalize import composition_signature, parse_inline_composition
+
+    index = get_index()
+    signature = composition_signature(
+        parse_inline_composition(
+            "Cetirizine Dihydrochloride 5mg, Phenylephrine Hydrochloride 10mg "
+            "and Paracetamol 325mg Tablets"
+        )
+    )
+
+    result = find_alternatives(
+        index, signature=signature, reference_price_per_unit=1.754, reference_unit="units"
+    )
+
+    assert result.already_generic is True
+    assert result.alternatives == []
+    assert "jan aushadhi" in result.message.lower()
+    assert "nothing cheaper" in result.message.lower()
+
+
+@requires_index
+def test_a_branded_product_is_not_flagged_as_already_generic():
+    """The negative control — the flag must not fire on an expensive brand."""
+    index = get_index()
+    reference = index.search("Crocin Advance Tablet", top_k=1)[0]
+
+    result = find_alternatives(
+        index,
+        signature=reference.signature,
+        reference_price_per_unit=reference.price_per_unit,
+        reference_unit=reference.pack_unit,
+        reference_row=reference.row,
+    )
+
+    assert result.already_generic is False
+    assert result.alternatives
+
+
+def test_message_pluralisation():
+    """"1 products share this composition" reads as a bug to a user."""
+    from packages.pharmacology.alternatives import _plural
+
+    assert _plural(1, "product") == "1 product"
+    assert _plural(3, "product") == "3 products"

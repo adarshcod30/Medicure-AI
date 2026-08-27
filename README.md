@@ -91,11 +91,12 @@ on a curved tin:
 | | Phone photos | Web product shots |
 |---|---|---|
 | Images | 12 | 16 |
-| Ingredient hit @1 | **7 / 11 (64%)** | **12 / 16 (75%)** |
-| Answered | 9 / 12 | 7 / 16 |
+| Ingredient hit @1 | **8 / 12 (67%)** | **12 / 16 (75%)** |
+| Answered | 9 / 12 | 8 / 16 |
 | **Silent failure** | **0 / 12** | **0 / 16** |
 | Orientation corrected | 6 / 12 | 1 / 16 |
-| Vision transcription used | 7 / 12 | 12 / 16 |
+| Vision transcription used | 7 / 12 | 13 / 16 |
+| Seconds per image | 7.0 | 7.0 |
 
 Vision transcription (Nova Pro, `--vision`) is what moved these: 13/27 to
 **19/27** overall, with silent failure still at zero. The discipline in its

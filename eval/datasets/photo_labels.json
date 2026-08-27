@@ -100,16 +100,23 @@
     },
     {
       "file": "photo_07.jpg",
-      "brand": "unidentified foil strip",
-      "expect": [],
+      "brand": "Jan Aushadhi generic (no brand) \u2014 PMBJP drug code 907",
+      "expect": [
+        "cetirizine",
+        "phenylephrine",
+        "paracetamol"
+      ],
       "defects": [
         "rotated_90",
         "foil_back",
-        "vertical_text",
-        "unlabelled"
+        "unbranded",
+        "bilingual",
+        "reflective",
+        "curved"
       ],
       "dir": "photos",
-      "source": "phone_capture"
+      "source": "phone_capture",
+      "note": "The purest test of composition-based identification: a Jan Aushadhi generic carries NO brand name, so the composition is the only thing to match on. Matches catalogue code 603 (Cetirizine Dihydrochloride 5mg + Phenylephrine Hydrochloride 10mg + Paracetamol 325mg, Rs 17.54 for 10 = Rs 1.75/tablet). Zero branded products in the 253,973-row index share this composition, so the correct affordability answer is 'you are already holding the cheap one'."
     },
     {
       "file": "photo_08.jpg",

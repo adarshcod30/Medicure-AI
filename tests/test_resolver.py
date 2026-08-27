@@ -261,10 +261,14 @@ def test_decide_returns_three_states():
     calibrator = Calibrator.unfitted()
     calibrator.threshold = 0.8
 
-    assert calibrator.decide([_match(0.95)], "q")[0] == "confident"
-    assert calibrator.decide([_match(0.55)], "q")[0] == "ambiguous"
-    assert calibrator.decide([_match(0.10)], "q")[0] == "abstained"
-    assert calibrator.decide([], "q")[0] == "abstained"
+    # A query with real lexical support, so the numeric-only gate is not what
+    # is being tested here — see test_a_numeric_only_match_is_never_confident.
+    query = "augmentin duo amoxycillin clavulanic tablets"
+
+    assert calibrator.decide([_match(0.95)], query)[0] == "confident"
+    assert calibrator.decide([_match(0.55)], query)[0] == "ambiguous"
+    assert calibrator.decide([_match(0.10)], query)[0] == "abstained"
+    assert calibrator.decide([], query)[0] == "abstained"
 
 
 @pytest.mark.skipif(
@@ -332,3 +336,35 @@ def test_discriminative_vocabulary_excludes_ubiquitous_words():
     vocabulary = get_index().discriminative_vocabulary(max_document_frequency=0.02)
     assert "belladonna" in vocabulary
     assert len(vocabulary) > 500
+
+
+def test_a_numeric_only_match_is_never_confident():
+    """Regression test for a measured silent failure.
+
+    On a low-resolution product shot, OCR returned
+    ['x0.035mg', 'x0.04mg', 'x0.03mg', 'ree', 'ore', 'tens', 'tthe'].
+    0.035mg is the exact strength of ethinyl estradiol — distinctive enough to
+    produce a strong wide-margin match — and the calibrator scored it 0.575
+    confident and wrong.
+
+    The query-quality features miss it: `x0.035mg` is eight characters, so mean
+    token length looks healthy. The problem is that no WORD supported the match.
+    """
+    calibrator = Calibrator.unfitted()
+    calibrator.threshold = 0.5
+
+    numeric_query = "x0.035mg x0.04mg x0.03mg ree ore tens tthe"
+    status, _ = calibrator.decide([_match(0.95), _match(0.20)], numeric_query)
+    assert status == "ambiguous", "a match resting on numerals must not be confident"
+
+    worded_query = "combiflam ibuprofen paracetamol tablets sanofi"
+    status, _ = calibrator.decide([_match(0.95), _match(0.20)], worded_query)
+    assert status == "confident"
+
+
+def test_lexical_support_counts_only_real_words():
+    from packages.resolver.calibrate import Calibrator as C
+
+    assert C.lexical_support("x0.035mg 500mg 10mg") == 0
+    assert C.lexical_support("ree ore mg") == 0          # all under 4 chars
+    assert C.lexical_support("paracetamol tablets ip") == 2

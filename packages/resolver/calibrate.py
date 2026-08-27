@@ -42,6 +42,15 @@ from .index import DEFAULT_ARTIFACT_DIR, BrandIndex, CompositionMatch
 
 CALIBRATOR_VERSION = 1
 
+MIN_LEXICAL_SUPPORT = 3
+"""Alphabetic tokens of 4+ characters required before answering *confidently*.
+
+Three rather than one: a single real word alongside a lucky numeric match is
+still thin evidence, and OCR emits plausible-looking non-words ("tens", "tthe")
+often enough that one is not a meaningful bar. Below the threshold the answer
+is downgraded to `ambiguous` rather than discarded — the candidate may well be
+right, and the user still sees it, but it is not presented as settled."""
+
 FEATURE_NAMES = (
     # --- match quality: how good is the best candidate ---
     "top_similarity",
@@ -261,6 +270,14 @@ class Calibrator:
         raw = float(self.model.predict_proba(features)[0, 1])
         return float(np.clip(self.isotonic.predict([raw])[0], 0.0, 1.0))
 
+    @staticmethod
+    def lexical_support(query: str) -> int:
+        """Count word-like tokens: alphabetic, four characters or more.
+
+        Numbers and short fragments do not count. See `decide` for why.
+        """
+        return sum(1 for t in query.split() if len(t) >= 4 and t.isalpha())
+
     def decide(self, matches: list[CompositionMatch], query: str) -> tuple[str, float]:
         """Return (status, probability): 'confident', 'ambiguous' or 'abstained'.
 
@@ -272,7 +289,24 @@ class Calibrator:
         """
         probability = self.probability(matches, query)
 
+        # A hard gate, independent of the learned probability: an
+        # identification resting on numbers alone is not an identification.
+        #
+        # Measured failure. On a low-resolution product shot, OCR returned
+        # ['x0.035mg', 'x0.04mg', 'x0.03mg', 'ree', 'ore', 'tens', 'tthe'].
+        # 0.035mg is the exact strength of ethinyl estradiol — distinctive
+        # enough to produce a strong, wide-margin match — and the calibrator
+        # scored it 0.575 confident and wrong. The query-quality features do not
+        # catch it because `x0.035mg` is eight characters, so mean token length
+        # looks healthy. The problem is not token length; it is that no WORD
+        # supported the match.
+        #
+        # Defence in depth rather than a replacement for calibration: the
+        # learned features handle degenerate queries in general, this handles
+        # the specific case where a numeral carries the whole match.
         if probability >= self.threshold:
+            if self.lexical_support(query) < MIN_LEXICAL_SUPPORT:
+                return "ambiguous", min(probability, self.threshold * 0.9)
             return "confident", probability
         if matches and probability >= self.threshold * 0.5:
             return "ambiguous", probability

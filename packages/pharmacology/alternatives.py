@@ -100,6 +100,15 @@ class AlternativesResult:
     reference_unit: str
     alternatives: list[Alternative] = field(default_factory=list)
     jan_aushadhi_available: bool = False
+    already_generic: bool = False
+    """The scanned product is itself at or below the Jan Aushadhi price.
+
+    Worth distinguishing. "No cheaper alternative exists" is the same sentence
+    whether the user is holding an overpriced brand nobody undercuts or the
+    government's own low-cost generic — and those call for opposite reactions.
+    A Jan Aushadhi strip is the answer the affordability feature exists to point
+    people toward, so telling its holder only that nothing is cheaper is
+    technically true and practically useless."""
     total_same_composition: int = 0
     message: str = ""
     workings: list[str] = field(default_factory=list)
@@ -109,6 +118,7 @@ class AlternativesResult:
             "reference_price_per_unit": self.reference_price_per_unit,
             "reference_unit": self.reference_unit,
             "jan_aushadhi_available": self.jan_aushadhi_available,
+            "already_generic": self.already_generic,
             "total_products_with_same_composition": self.total_same_composition,
             "count": len(self.alternatives),
             "alternatives": [a.to_dict() for a in self.alternatives],
@@ -161,6 +171,19 @@ def find_alternatives(
     generics: list[GenericRecord] = index.generics_by_signature(signature)
     result.total_same_composition = len(siblings) + len(generics)
     result.jan_aushadhi_available = bool(generics)
+
+    # Is the scanned product already at or below the Jan Aushadhi price?
+    if generics and reference_price_per_unit is not None:
+        cheapest_generic = min(
+            (g.price_per_unit for g in generics
+             if g.price_per_unit is not None and g.pack_unit == reference_unit),
+            default=None,
+        )
+        if cheapest_generic is not None:
+            # A small tolerance: pack-size parsing and MRP rounding both
+            # introduce a few percent, and flipping this flag on a 2% gap would
+            # be noise rather than a finding.
+            result.already_generic = reference_price_per_unit <= cheapest_generic * 1.05
 
     if reference_price_per_unit is None:
         result.message = (
@@ -264,6 +287,10 @@ def find_alternatives(
     return result
 
 
+def _plural(count: int, singular: str, plural: str | None = None) -> str:
+    return f"{count} {singular if count == 1 else (plural or singular + 's')}"
+
+
 def _describe(result: AlternativesResult, n_generics: int, n_brands: int) -> str:
     """Explain the outcome, including — especially — an empty one."""
     plausible = [a for a in result.alternatives if not a.implausible]
@@ -285,6 +312,18 @@ def _describe(result: AlternativesResult, n_generics: int, n_brands: int) -> str
             )
         return lead + "."
 
+    if result.already_generic:
+        lead = (
+            "This is already a Jan Aushadhi generic — the government's low-cost option, "
+            "so there is nothing cheaper to switch to."
+        )
+        if n_brands == 0:
+            lead += (
+                " No branded product with this exact composition appears in the dataset "
+                "at all."
+            )
+        return lead
+
     if n_generics == 0 and n_brands <= 1:
         return (
             "No other product with this exact composition is present in the dataset, "
@@ -294,13 +333,14 @@ def _describe(result: AlternativesResult, n_generics: int, n_brands: int) -> str
 
     if n_generics == 0:
         return (
-            f"{n_brands} products share this composition, but none is meaningfully "
-            "cheaper than this one. There is no Jan Aushadhi equivalent for it."
+            f"{_plural(n_brands, 'product')} share this composition, but none is "
+            "meaningfully cheaper than this one. There is no Jan Aushadhi equivalent "
+            "for it."
         )
 
     return (
-        f"{n_generics + n_brands} products share this composition, but none is cheaper "
-        "once pack sizes are taken into account."
+        f"{_plural(n_generics + n_brands, 'product')} share this composition, but none "
+        "is cheaper once pack sizes are taken into account."
     )
 
 
