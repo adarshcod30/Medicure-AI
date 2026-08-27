@@ -195,3 +195,46 @@ def group_into_lines(
             lines.append([box])
 
     return [sorted(line, key=lambda b: b[0]) for line in lines]
+
+
+def crop_to_text(
+    img: np.ndarray,
+    boxes: list[tuple[int, int, int, int]],
+    *,
+    pad: int = 8,
+    min_boxes: int = 12,
+    max_area_fraction: float = 0.92,
+    min_area_fraction: float = 0.04,
+) -> np.ndarray | None:
+    """Crop to the extent of detected text, or None if that would be unsafe.
+
+    Used by the pipeline to add one extra rendition with the packaging chrome
+    removed — logos, colour blocks, blister foil — so Tesseract's layout
+    analysis sees text and little else.
+
+    Returns None rather than a bad crop in three cases, because a wrong crop
+    silently destroys evidence while looking like a successful stage:
+
+    - Too few boxes: MSER found noise, not writing.
+    - The crop covers almost the whole frame: nothing was gained, and the extra
+      OCR pass is pure cost.
+    - The crop is tiny: detection latched onto one corner and cropping there
+      would throw away most of the text on the pack.
+    """
+    if len(boxes) < min_boxes:
+        return None
+
+    h, w = img.shape[:2]
+    x0 = max(0, min(b[0] for b in boxes) - pad)
+    y0 = max(0, min(b[1] for b in boxes) - pad)
+    x1 = min(w, max(b[0] + b[2] for b in boxes) + pad)
+    y1 = min(h, max(b[1] + b[3] for b in boxes) + pad)
+
+    if x1 <= x0 or y1 <= y0:
+        return None
+
+    fraction = ((x1 - x0) * (y1 - y0)) / float(h * w)
+    if fraction > max_area_fraction or fraction < min_area_fraction:
+        return None
+
+    return img[y0:y1, x0:x1]

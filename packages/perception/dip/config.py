@@ -175,7 +175,38 @@ class DipConfig:
     reason they exist."""
 
     # ---- text region detection -------------------------------------------
-    text_detection: bool = True
+    text_detection: bool = False
+    """MSER text-region detection, adding a chrome-free crop rendition.
+
+    OFF because it was measured and lost. Both arms over the 28 labelled real
+    images, OCR only (no vision fallback), so the crop rendition is the single
+    variable:
+
+        arm                     phone    web     all    s/image
+        text detection OFF       5/12    8/16   13/28       5.1
+        text detection ON        5/12    7/16   12/28       5.7
+
+    One image changed and it changed for the worse: web_09 went from reaching
+    azithromycin to reaching caffeine + cetirizine. Silent failures stayed at
+    0/28 in both arms, so nothing became *dangerous* -- it simply costs 12%
+    more time to be slightly less accurate.
+
+    The phone captures, which are the distribution that matters, were exactly
+    neutral at 5/12. That is the honest reading: at n=28 a one-image
+    difference is noise, and "noise plus a 0.6s tax" is not a case for
+    switching it on.
+
+    Why it does not help, plausibly: the pipeline already deskews, rectifies
+    and upscales, so Tesseract's own layout analysis is not being confused by
+    packaging chrome as much as cropping assumes. The crop mostly removes
+    pixels that were already being ignored, while occasionally clipping text
+    that MSER missed.
+
+    Reproduce:
+        python -m eval.bench_photos --no-text-detection
+        python -m eval.bench_photos --text-detection --out <somewhere-else>
+    """
+
     text_method: Literal["mser", "swt", "none"] = "mser"
 
     # ---- debugging -------------------------------------------------------

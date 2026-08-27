@@ -54,6 +54,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "eval" / "results")
     parser.add_argument("--vision", action="store_true",
                         help="also run Bedrock vision transcription (costs tokens)")
+    parser.add_argument("--text-detection", dest="text_detection",
+                        action="store_true", default=None,
+                        help="force the MSER text-crop rendition ON")
+    parser.add_argument("--no-text-detection", dest="text_detection",
+                        action="store_false",
+                        help="force the MSER text-crop rendition OFF")
     args = parser.parse_args(argv)
 
     if not args.labels.exists():
@@ -94,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
         image = acquire.decode(path.read_bytes())
         image, _ = acquire.limit_resolution(image, args.max_dimension)
 
-        dip = run_auto(image)
+        dip = run_auto(image, text_detection=args.text_detection)
         ocr = te.read_renditions(dip.renditions)
         raw_tokens = ocr.consensus_tokens or ocr.tokens
         tokens = boilerplate.filter_tokens(raw_tokens, stopwords)

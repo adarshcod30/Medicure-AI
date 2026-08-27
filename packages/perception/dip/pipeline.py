@@ -59,6 +59,7 @@ from . import (
     rectify,
     scale as scale_stage,
     segment,
+    textdetect,
 )
 from .config import DipConfig
 from .quality import QualityReport, assess
@@ -365,6 +366,43 @@ def run(image: bytes | np.ndarray, config: DipConfig | None = None) -> DipResult
             Rendition(name=f"up{scale_estimate.scale:.1f}x:none:rot0", image=upscaled_gray)
         )
 
+    # --- 10b. text-region crop --------------------------------------------
+    # MSER plus a stroke-width check finds where the characters are; cropping
+    # to their extent drops packaging chrome — logos, colour blocks, the blister
+    # foil — before Tesseract does layout analysis on it.
+    #
+    # Additive, like the upscaled pass: one extra rendition, not a replacement.
+    # See config.text_detection for the measurement that sets the default.
+    if config.text_detection:
+        mark = time.perf_counter()
+        try:
+            boxes = textdetect.mser_regions(gray)
+            crop = textdetect.crop_to_text(gray, boxes)
+            if crop is not None:
+                mask = binarize.binarize(
+                    crop, "sauvola", window=config.sauvola_window, sauvola_k=config.sauvola_k
+                )
+                coverage = binarize.ink_coverage(mask)
+                if 0.010 <= coverage <= 0.45:
+                    renditions.append(
+                        Rendition(
+                            name="textcrop:sauvola:rot0",
+                            image=morphology.remove_small_components(mask, min_area=10),
+                            binarize_method="sauvola",
+                            ink_coverage=coverage,
+                        )
+                    )
+                renditions.append(Rendition(name="textcrop:none:rot0", image=crop))
+            metrics["text_detection"] = {
+                "regions": len(boxes),
+                "cropped": crop is not None,
+                "ms": round((time.perf_counter() - mark) * 1000, 1),
+            }
+        except cv2.error as exc:
+            # MSER is the one stage here that can fail on a legitimately odd
+            # image. Losing an optional extra rendition must not lose the scan.
+            metrics["text_detection"] = {"error": str(exc)}
+
     # Always include the unbinarised greyscale. Tesseract's own internal
     # thresholding sometimes beats all of ours, and on the `raw` ablation rung
     # this is the only rendition there is.
@@ -414,7 +452,12 @@ def select_config(quality: QualityReport) -> tuple[DipConfig, str]:
     return DipConfig.full(), "full"
 
 
-def run_auto(image: bytes | np.ndarray, *, dump_stages: bool = False) -> DipResult:
+def run_auto(
+    image: bytes | np.ndarray,
+    *,
+    dump_stages: bool = False,
+    text_detection: bool | None = None,
+) -> DipResult:
     """Assess quality cheaply, then run the preset that suits the image.
 
     The probe costs one decode plus three cheap measurements, which is far less
@@ -435,6 +478,10 @@ def run_auto(image: bytes | np.ndarray, *, dump_stages: bool = False) -> DipResu
     config, name = select_config(probe)
     if dump_stages:
         config = config.with_(dump_stages=True)
+    # Explicit override, for the A/B in eval/bench_photos.py. None keeps
+    # whatever the selected preset set.
+    if text_detection is not None:
+        config = config.with_(text_detection=text_detection)
 
     result = run(bounded, config)
     result.metrics["auto_preset"] = name

@@ -333,16 +333,21 @@ def test_pipeline_respects_the_rendition_cap():
     config = DipConfig.full().with_(max_renditions=4)
     result = run(synthetic.encode(synthetic.degraded_strip()[0]), config)
 
-    # The cap bounds the (binarisation x rotation) fan-out. Up to three fixed
-    # renditions are appended outside it: the unbinarised greyscale, plus a
-    # binarised and a greyscale upscale when adaptive scaling fires. Those are
-    # the passes that read small print.
-    fanned = [r for r in result.renditions
-              if not r.name.startswith("up") and r.name != "gray:none:rot0"]
+    # The cap bounds the (binarisation x rotation) fan-out. A few fixed
+    # renditions are appended outside it: the unbinarised greyscale, a
+    # binarised and a greyscale upscale when adaptive scaling fires, and a
+    # binarised and greyscale text-crop when text detection fires. Those are
+    # the passes that read small print and strip packaging chrome.
+    fanned = [
+        r
+        for r in result.renditions
+        if not r.name.startswith(("up", "textcrop"))
+        and r.name != "gray:none:rot0"
+    ]
     extras = [r for r in result.renditions if r not in fanned]
 
     assert len(fanned) <= config.max_renditions
-    assert len(extras) <= 3
+    assert len(extras) <= 5
 
 
 def test_raw_preset_does_no_processing():
