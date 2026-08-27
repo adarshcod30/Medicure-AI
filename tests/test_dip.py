@@ -526,3 +526,42 @@ def test_upscaled_renditions_are_added_not_multiplied():
     upscaled = [r for r in result.renditions if r.name.startswith("up")]
     # At most one binarised upscale plus one greyscale upscale.
     assert len(upscaled) <= 2
+
+
+def test_component_removal_is_linear_not_quadratic():
+    """Regression test for a 9-second performance bug.
+
+    `remove_small_components` originally did `out[labels == i] = 255` per
+    component — a full-image scan for every blob, so O(components x pixels).
+    After adaptive upscaling there are thousands of components on a 3000px
+    image, and it accounted for roughly 9 of the 17 seconds a scan was taking.
+
+    Asserted on wall-clock rather than shape: the correctness of the output is
+    covered elsewhere, and the thing that regressed here was cost.
+    """
+    import time
+
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    # Many small components, which is the pathological case.
+    mask = (rng.random((1500, 1500)) > 0.97).astype(np.uint8) * 255
+
+    start = time.perf_counter()
+    result = morphology.remove_small_components(mask, min_area=12)
+    elapsed = time.perf_counter() - start
+
+    assert result.shape == mask.shape
+    assert elapsed < 2.0, f"took {elapsed:.1f}s — the quadratic version is back"
+
+
+def test_component_removal_keeps_large_drops_small():
+    import numpy as np
+
+    mask = np.zeros((200, 200), np.uint8)
+    mask[20:60, 20:60] = 255      # 1600 px — keep
+    mask[100:102, 100:102] = 255  # 4 px — drop
+
+    result = morphology.remove_small_components(mask, min_area=12)
+    assert result[40, 40] == 255
+    assert result[100, 100] == 0

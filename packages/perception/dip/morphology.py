@@ -109,13 +109,21 @@ def remove_small_components(mask: np.ndarray, min_area: int = 12) -> np.ndarray:
     Post-binarisation cleanup: isolated specks survive thresholding and become
     stray punctuation in the OCR output, which then corrupts the token stream
     the resolver matches against.
+
+    Implemented as a single lookup over the label image rather than a loop of
+    `out[labels == i] = 255`. The obvious per-component version scans the whole
+    image once per blob, so it costs O(components x pixels) — and after adaptive
+    upscaling there are thousands of components on a 3000px image. It accounted
+    for roughly 9 of the 17 seconds a full scan was taking. Building a boolean
+    keep-mask indexed by label makes it O(pixels).
     """
-    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
-    out = np.zeros_like(mask)
-    for i in range(1, n_labels):
-        if stats[i, cv2.CC_STAT_AREA] >= min_area:
-            out[labels == i] = 255
-    return out
+    count, labels, stats, _centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    if count <= 1:
+        return np.zeros_like(mask)
+
+    keep = stats[:, cv2.CC_STAT_AREA] >= min_area
+    keep[0] = False  # label 0 is background
+    return np.where(keep[labels], 255, 0).astype(np.uint8)
 
 
 def skeletonize(mask: np.ndarray, max_iterations: int = 100) -> np.ndarray:
