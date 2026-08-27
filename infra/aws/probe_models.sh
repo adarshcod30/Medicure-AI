@@ -8,9 +8,13 @@
 # reports the outcome, so the answer is empirical rather than assumed.
 #
 # Ordered first-party first. Amazon Nova and Titan are native AWS services;
-# Anthropic, Meta, Mistral and Cohere are delivered via AWS Marketplace
-# subscriptions, which is the thing that requires a valid payment method. If
-# billing is unresolved, the first-party models are the ones likely to work.
+# the third-party families are delivered via AWS Marketplace subscriptions,
+# which is the thing that requires a valid payment method. If billing is
+# unresolved, the first-party models are the ones likely to work.
+#
+# The third-party model IDs below are deliberately kept: this script exists to
+# test what an account can actually invoke, and dropping them would remove the
+# evidence for choosing Nova.
 
 set -uo pipefail
 REGION="${AWS_REGION:-us-east-1}"

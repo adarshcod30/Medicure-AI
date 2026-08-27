@@ -21,8 +21,8 @@ being fabricated.
 - **Every claim carries provenance.** `source: {dataset, record_id, url}`.
 - **Set `maxTokens` on every Bedrock call.** Unset, it reserves the model
   maximum against quota and causes throttling at low request rates.
-- **Amazon Nova, not Claude.** Anthropic models are subscribed via AWS
-  Marketplace and fail on this AISPL (AWS India) account with
+- **Amazon Nova, not a Marketplace model.** Third-party models are subscribed
+  via AWS Marketplace and fail on this AISPL (AWS India) account with
   INVALID_PAYMENT_INSTRUMENT despite a valid card. Nova is first-party and
   multimodal. `bash infra/aws/probe_models.sh` re-checks empirically.
 - **The vision model transcribes; it never identifies.** It can name the drug

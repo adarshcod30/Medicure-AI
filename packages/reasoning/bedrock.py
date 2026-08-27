@@ -5,7 +5,7 @@ Uses the **Converse API** rather than InvokeModel: one request shape across
 providers, instead of a different JSON body per model family where using the
 wrong one produces "Malformed input request".
 
-That choice paid off. Switching the whole system from Claude to Amazon Nova
+That choice paid off. Switching the whole system to Amazon Nova
 touched one default parameter and two lines of config — no request-body
 rewrite, no per-provider branching. Under InvokeModel the same switch would
 have meant rewriting the payload for a different provider's schema.

@@ -3,11 +3,12 @@
 You create the IAM user and paste two keys into `.env`. Everything else is
 already wired.
 
-## Why Amazon Nova and not Claude
+## Why Amazon Nova and not a Marketplace model
 
-Anthropic models on Bedrock are subscribed through **AWS Marketplace**. This
-project's account is an **AISPL** account — Amazon Web Services India Private
-Limited, billing in INR — and every Converse call to Claude returned:
+Third-party models on Bedrock are subscribed through **AWS Marketplace**.
+This project's account is an **AISPL** account — Amazon Web Services India
+Private Limited, billing in INR — and every Converse call to one of them
+returned:
 
     AccessDeniedException: Model access is denied due to
     INVALID_PAYMENT_INSTRUMENT. Your AWS Marketplace subscription for this
@@ -16,9 +17,10 @@ Limited, billing in INR — and every Converse call to Claude returned:
 ...despite a valid Visa being on file and set as default. The blocker is the
 Marketplace subscription path on the India reseller entity, not the card.
 
-**Amazon Nova is first-party AWS.** No Marketplace subscription is involved, so
-this class of failure does not apply. It is also multimodal, which the vision
-transcription path needs, and cheaper than Claude for this workload.
+**Amazon Nova is first-party AWS.** No Marketplace subscription is involved,
+so this class of failure does not apply. It is also multimodal, which the
+vision transcription path needs, and cheaper than the Marketplace options for
+this workload.
 
 | Role | Model | Used for |
 |---|---|---|
@@ -114,4 +116,4 @@ Then:
 
 `capabilities.explanations` flips to `true` only after a real invocation
 succeeds. A constructed client proves nothing — that was the whole lesson of
-the Claude failure.
+the Marketplace payment failure.

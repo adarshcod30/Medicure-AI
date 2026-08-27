@@ -6,7 +6,7 @@ This measures the *retrieval* layer in isolation, before anything touches the
 calibrated path. The decision rule for `enable_dense_retrieval` lives here:
 fusion ships as a default only if it beats lexical-only on this benchmark,
 because this project has twice adopted an "obvious" improvement that measured
-worse (see CLAUDE.md).
+worse (see NOTES.md).
 
 Grading is exact signature equality at rank k — stricter than the
 ingredient-overlap rule bench_identify uses for answers, deliberately so:

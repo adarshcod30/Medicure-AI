@@ -48,7 +48,7 @@ DDINTER_ALIASES = {
     # This table lives here, in the ingest, rather than in
     # resolver/normalize.py on purpose. Editing canonical_ingredient would
     # shift every composition signature and invalidate the index AND the
-    # calibrator (see CLAUDE.md). This is a problem of reconciling one
+    # calibrator (see NOTES.md). This is a problem of reconciling one
     # dataset's vocabulary with ours, not a change to what a composition
     # signature means, so it belongs to the dataset.
     #

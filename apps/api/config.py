@@ -65,11 +65,11 @@ class Settings(BaseSettings):
     bedrock_model_id: str = "us.amazon.nova-pro-v1:0"
     """Model for the explanation step.
 
-    Defaults to Amazon Nova rather than Claude for a practical reason: Nova and
-    Titan are **first-party AWS services**, while Anthropic, Meta, Mistral and
-    Cohere models are delivered through **AWS Marketplace subscriptions**. The
-    Marketplace path is what requires a valid payment instrument, so on an
-    account without one the third-party models fail with
+    Defaults to Amazon Nova rather than a third-party model for a practical
+    reason: Nova and Titan are **first-party AWS services**, while the
+    third-party families are delivered through **AWS Marketplace
+    subscriptions**. The Marketplace path is what requires a valid payment
+    instrument, so on an account without one the third-party models fail with
     INVALID_PAYMENT_INSTRUMENT while the first-party ones keep working.
 
     The choice matters far less here than it would in most systems. This model

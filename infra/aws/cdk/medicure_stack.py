@@ -84,9 +84,9 @@ class MedicureStack(cdk.Stack):
             ],
         )
 
-        # Scoped to the first-party models this project actually uses. Anthropic,
-        # Meta and Mistral models are delivered through AWS Marketplace, which
-        # fails on an AISPL account without a Marketplace-valid payment
+        # Scoped to the first-party models this project actually uses.
+        # Third-party model families are delivered through AWS Marketplace,
+        # which fails on an AISPL account without a Marketplace-valid payment
         # instrument - see apps/api/config.py.
         role.add_to_policy(
             iam.PolicyStatement(

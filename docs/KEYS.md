@@ -19,13 +19,14 @@ IAM user `medicure-dev` on account 104422508395. Verified working:
     us.amazon.nova-micro-v1:0      OK
     amazon.titan-embed-text-v2:0   OK    1024 dims, for M3 vector search
 
-**Anthropic models fail on this account** with
+**Third-party Marketplace models fail on this account** with
 `INVALID_PAYMENT_INSTRUMENT: Your AWS Marketplace subscription for this model
-cannot be completed`, despite a valid card set as default. Claude is delivered
-through AWS Marketplace, and this is an AISPL account — Amazon Web Services
-India Private Limited, billing in INR — where that path is refused. Amazon's
-own models are first-party and bypass Marketplace entirely, which is why Nova
-works and Claude does not. Not a billing fault; an entity/channel one.
+cannot be completed`, despite a valid card set as default. Those models are
+delivered through AWS Marketplace, and this is an AISPL account — Amazon Web
+Services India Private Limited, billing in INR — where that path is refused.
+Amazon's own models are first-party and bypass Marketplace entirely, which is
+why Nova works and the Marketplace ones do not. Not a billing fault; an
+entity/channel one.
 
 ## Sarvam AI — the strongest unused key
 
