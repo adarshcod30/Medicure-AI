@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import {
   FiAlertTriangle, FiCamera, FiCheckCircle, FiChevronDown, FiChevronRight,
-  FiHelpCircle, FiSlash, FiTag, FiTrendingDown,
+  FiHelpCircle, FiPlus, FiSlash, FiTag, FiTrendingDown,
 } from 'react-icons/fi';
+import {
+  addToCabinet, isAuthenticated, isStorageDisabled, errorDetail,
+} from '../services/api';
 
 /**
  * Renders the grounded response contract.
@@ -223,6 +226,70 @@ function Alternatives({ alternatives }) {
   );
 }
 
+/**
+ * "Add to cabinet" — rendered only when there is something real to add: the
+ * user is signed in, the identification is confident, and the payload carries
+ * the composition signature. The signature is passed through byte-for-byte;
+ * this component never rebuilds one from display text, because display text
+ * is for people and the signature is the identity the resolver computed.
+ */
+function AddToCabinet({ data }) {
+  const [state, setState] = useState('idle'); // idle | busy | added
+  const [notice, setNotice] = useState(null);
+
+  const id = data.identification || {};
+  const signature = id.signature;
+  if (!isAuthenticated()) return null;
+  if (id.status !== 'confident') return null;
+  if (!Array.isArray(signature) || signature.length === 0) return null;
+
+  const handleAdd = async () => {
+    setState('busy');
+    setNotice(null);
+    try {
+      await addToCabinet({
+        display_name: id.closest_brand || id.composition,
+        signature,
+        source: data.reference_product?.source ?? null,
+      });
+      setState('added');
+    } catch (err) {
+      setState('idle');
+      setNotice(
+        isStorageDisabled(err)
+          ? 'Accounts are disabled on this deployment, so there is no cabinet to add to.'
+          : errorDetail(err, 'Could not add to cabinet.'),
+      );
+    }
+  };
+
+  return (
+    <div style={{ marginTop: '0.9rem' }}>
+      {state === 'added' ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                       color: '#15803d', fontSize: '0.85rem', fontWeight: 600 }}>
+          <FiCheckCircle /> In your cabinet — interactions are checked on the cabinet page
+        </span>
+      ) : (
+        <button
+          onClick={handleAdd}
+          disabled={state === 'busy'}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                   padding: '0.45rem 0.9rem', borderRadius: 8, cursor: 'pointer',
+                   border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#15803d',
+                   fontSize: '0.85rem', fontWeight: 600,
+                   opacity: state === 'busy' ? 0.6 : 1 }}
+        >
+          <FiPlus /> {state === 'busy' ? 'Adding…' : 'Add to cabinet'}
+        </button>
+      )}
+      {notice && (
+        <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0.4rem 0 0' }}>{notice}</p>
+      )}
+    </div>
+  );
+}
+
 function ImageQuality({ quality }) {
   if (!quality) return null;
   const good = quality.verdict === 'good';
@@ -289,6 +356,8 @@ export default function ResultsDisplay({ data }) {
         {id.status !== 'unreadable' && (
           <Confidence probability={id.probability} calibrated={id.calibrated} />
         )}
+
+        <AddToCabinet data={data} />
       </div>
 
       {data.explanation?.text && (

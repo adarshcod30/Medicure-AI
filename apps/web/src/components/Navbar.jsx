@@ -1,14 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiActivity, FiLogOut } from 'react-icons/fi';
 import { getStoredUser, logout } from '../services/api';
 
-export default function Navbar({ onLogout }) {
+export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const user = getStoredUser();
 
   const handleLogout = () => {
     logout();
-    if (onLogout) onLogout();
+    // Leave whatever account-gated page we were on; the dashboard works
+    // anonymously.
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path ? 'active' : '';
@@ -23,10 +26,13 @@ export default function Navbar({ onLogout }) {
       <div className="navbar-links">
         <Link to="/" className={isActive('/')}>Scan</Link>
         <Link to="/history" className={isActive('/history')}>History</Link>
-        {user && (
-          <button onClick={handleLogout} title="Sign out">
+        <Link to="/cabinet" className={isActive('/cabinet')}>Cabinet</Link>
+        {user ? (
+          <button onClick={handleLogout} title={`Sign out ${user.name || user.email || ''}`.trim()}>
             <FiLogOut />
           </button>
+        ) : (
+          <Link to="/login" className={isActive('/login')}>Sign in</Link>
         )}
       </div>
     </nav>
