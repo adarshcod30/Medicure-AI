@@ -19,6 +19,7 @@ from packages.perception.vision_transcribe import VisionTranscriber
 from packages.reasoning.explainer import Explainer
 from packages.resolver.calibrate import Calibrator, load_or_default
 from packages.resolver.index import BrandIndex
+from packages.storage import MongoStore
 
 from .config import Settings
 
@@ -34,6 +35,7 @@ class AppState:
         self.ceiling_table: CeilingPriceTable | None = None
         self.orchestrator: Orchestrator | None = None
         self.bedrock: BedrockClient | None = None
+        self.store: MongoStore | None = None
         self.startup_errors: list[str] = []
 
     @property
@@ -103,6 +105,20 @@ class AppState:
             explainer=explainer,
             transcriber=transcriber,
         )
+
+    async def connect_store(self, settings: Settings) -> None:
+        """Separate from `startup` because the Mongo ping needs the event loop.
+
+        Storage failing is a degradation, not a fault: identification, price
+        checks and abstention carry no state. Only accounts, history and the
+        cabinet need it, and their routes report the absence themselves.
+        """
+        self.store = MongoStore(settings.mongodb_uri, settings.mongodb_database)
+        if not await self.store.connect():
+            self.startup_errors.append(
+                f"mongodb unavailable: {self.store.last_error} — "
+                "accounts, history and the cabinet are disabled; scanning is not"
+            )
 
 
 state = AppState()

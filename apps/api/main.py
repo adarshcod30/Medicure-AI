@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .deps import state
-from .routers import metrics, scan, search
+from .routers import auth, cabinet, history, interactions, lasa, metrics, scan, search
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)-7s %(name)s: %(message)s"
@@ -40,6 +40,7 @@ async def lifespan(app: FastAPI):
     logger.info("starting %s (%s)", settings.app_name, settings.environment)
 
     state.startup(settings)
+    await state.connect_store(settings)
 
     if state.ready:
         logger.info("ready")
@@ -53,6 +54,8 @@ async def lifespan(app: FastAPI):
         logger.warning("degraded: %s", problem)
 
     yield
+    if state.store is not None:
+        state.store.close()
     logger.info("shutting down")
 
 
@@ -80,6 +83,11 @@ app.add_middleware(
 app.include_router(scan.router, prefix="/v1", tags=["scan"])
 app.include_router(search.router, prefix="/v1", tags=["search"])
 app.include_router(metrics.router, prefix="/v1", tags=["metrics"])
+app.include_router(auth.router, prefix="/v1/auth", tags=["auth"])
+app.include_router(history.router, prefix="/v1", tags=["history"])
+app.include_router(cabinet.router, prefix="/v1", tags=["cabinet"])
+app.include_router(interactions.router, prefix="/v1", tags=["interactions"])
+app.include_router(lasa.router, prefix="/v1", tags=["lasa"])
 
 
 @app.get("/")

@@ -88,6 +88,13 @@ class Settings(BaseSettings):
 
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
 
+    enable_dense_retrieval: bool = False
+    """Dense (embedding) retrieval fused with the lexical index via reciprocal
+    rank fusion. Off until `python -m eval.bench_identify` shows the fusion
+    beating the lexical baseline — this project has twice adopted an "obvious"
+    improvement that measured worse, so the default is decided by the
+    benchmark, not by the feature existing."""
+
     bedrock_max_tokens: int = 2048
     """ALWAYS set explicitly on every call. Leaving maxTokens unset makes
     Bedrock reserve the model's maximum against your quota — tens of thousands
