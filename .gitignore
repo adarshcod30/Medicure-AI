@@ -46,3 +46,9 @@ data/raw/packaging/
 data/raw/gimages/
 data/raw/web/
 data/processed/generic.csv.superseded-*
+
+# Derived from the DDInter release in data/raw/ddinter/, not authored here.
+# Rebuilt by `python scripts/ingest_interactions.py`, exactly like the index in
+# data/artifacts/. Kept out of git so the repository does not redistribute a
+# third-party dataset, and so a 6 MB generated file does not live in history.
+data/processed/interactions/

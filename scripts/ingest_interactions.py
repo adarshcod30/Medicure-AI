@@ -38,6 +38,37 @@ RAW_DIR = REPO_ROOT / "data" / "raw" / "ddinter"
 OUT_PATH = REPO_ROOT / "data" / "processed" / "interactions" / "interactions.csv"
 SOURCE_URL = "https://ddinter.scbdd.com/"
 
+DDINTER_ALIASES = {
+    # DDInter labels drugs with USAN (American) names; Indian packaging uses
+    # BAN/INN (British) names. Same molecule, different naming convention.
+    # Without these, 4,770 interaction mentions were silently dropped --
+    # including every interaction involving adrenaline, which is not a gap
+    # worth having.
+    #
+    # This table lives here, in the ingest, rather than in
+    # resolver/normalize.py on purpose. Editing canonical_ingredient would
+    # shift every composition signature and invalidate the index AND the
+    # calibrator (see CLAUDE.md). This is a problem of reconciling one
+    # dataset's vocabulary with ours, not a change to what a composition
+    # signature means, so it belongs to the dataset.
+    #
+    # Every entry is a naming-convention synonym for the SAME molecule.
+    # Deliberately NOT included: prednisone -> prednisolone. They are
+    # different drugs in a prodrug relationship, and mapping them would
+    # invent a clinical equivalence rather than translate a name. Roughly
+    # 1,869 prednisone mentions stay dropped, correctly.
+    "epinephrine": "adrenaline",
+    "glyburide": "glibenclamide",
+    "rifampin": "rifampicin",
+    "ethanol": "alcohol",
+    "levothyroxine": "thyroxine",
+    "meperidine": "pethidine",
+    "isoproterenol": "isoprenaline",
+    "cromolyn": "sodium cromoglycate",
+    "phenobarbital": "phenobarbitone",
+    "benzylpenicillin": "penicillin g",
+}
+
 INSTRUCTIONS = f"""
 No DDInter files found in {RAW_DIR}
 
@@ -58,6 +89,16 @@ Until then the engine reports itself unavailable, which is the correct
 behaviour: an empty interaction list with an honest "no dataset installed"
 note, rather than a reassuring silence.
 """
+
+
+def _map(name: str) -> str:
+    """Fold a DDInter drug name into our canonical vocabulary.
+
+    Alias first, then the shared canonical fold, so an alias target still gets
+    salt-stripped exactly like every other ingredient in the system.
+    """
+    folded = canonical_ingredient(name)
+    return canonical_ingredient(DDINTER_ALIASES.get(folded, folded))
 
 
 def catalogue_vocabulary() -> set[str]:
@@ -97,8 +138,8 @@ def main() -> int:
                 drug_b = lower.get("drug_b") or lower.get("drug b") or ""
                 level = lower.get("level") or lower.get("severity") or "Unknown"
 
-                a = canonical_ingredient(drug_a)
-                b = canonical_ingredient(drug_b)
+                a = _map(drug_a)
+                b = _map(drug_b)
                 if not a or not b or a == b:
                     continue
 
