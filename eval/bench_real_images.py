@@ -23,6 +23,11 @@ not resolve above `--label-threshold` is discarded, not guessed at. On the first
 sample of eight, all eight resolved above 0.67.
 
     python -m eval.bench_real_images --dir data/raw/gimages
+
+The harvest itself is NOT in the repository: it is scraped retail imagery, and
+redistributing it is not ours to do. `--dir` must point at a directory holding
+`harvest.tsv` (caption per image) and `images/`. Without it the script exits
+with a message naming both expected paths rather than pretending to run.
 """
 
 from __future__ import annotations

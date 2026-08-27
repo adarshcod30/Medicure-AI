@@ -1,54 +1,51 @@
-# Node.js
-node_modules/
-backend/uploads/
-backend/database.sqlite
-backend/database.sqlite-journal
+# ── Secrets ──────────────────────────────────────────────────────────────
+.env
+*.bak
 
-# Python
+# ── Python ───────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
 .venv/
 venv/
 env/
+.pytest_cache/
+.ruff_cache/
 
-# React Vite
-frontend/dist/
-frontend/node_modules/
-frontend/.eslintcache
+# ── Node / frontend ──────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.eslintcache
 
-# Env
-.env
+# ── Editor and tooling (per-developer, machine-specific) ─────────────────
+.vscode/
+.idea/
+.claude/
 
-# OS
+# ── OS ───────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Data artifacts (large / derived — rebuild with scripts/build_index.py)
+# ── Data ─────────────────────────────────────────────────────────────────
+# Everything here is either large, derived, or not ours to redistribute.
+# Each is reproducible; see infra/deploy/README.md for what a fresh
+# deployment needs.
+#
+#   data/raw/         source imagery and third-party dataset releases
+#   data/artifacts/   the lexical index      -> scripts/build_index.py
+#                     the dense vectors      -> scripts/build_embeddings.py
+#   interactions/     the DDInter table      -> scripts/ingest_interactions.py
+#
+# data/processed/*.csv IS tracked: those are the catalogue sources the index
+# is built from, and the project is not useful without them.
 data/raw/
 data/artifacts/
+data/processed/interactions/
 data/processed/*.csv.gz
+data/processed/*.superseded-*
 
-# Python tooling
-.pytest_cache/
-.ruff_cache/
-*.egg-info/
-build/
-dist/
-
-# DIP stage dumps
+# ── DIP stage dumps (--dump-stages output) ───────────────────────────────
 out/
 stages/
-
-# Collected evaluation imagery — local only, not redistributed
-data/raw/photos/
-data/raw/packaging/
-data/raw/gimages/
-data/raw/web/
-data/processed/generic.csv.superseded-*
-
-# Derived from the DDInter release in data/raw/ddinter/, not authored here.
-# Rebuilt by `python scripts/ingest_interactions.py`, exactly like the index in
-# data/artifacts/. Kept out of git so the repository does not redistribute a
-# third-party dataset, and so a 6 MB generated file does not live in history.
-data/processed/interactions/
