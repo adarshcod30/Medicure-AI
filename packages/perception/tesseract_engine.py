@@ -28,10 +28,16 @@ diagnostic one) and `consensus_tokens` for precision.
 
 from __future__ import annotations
 
+import logging
+import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     import pytesseract
@@ -250,25 +256,59 @@ def read_renditions(
     scores: dict[str, float] = {}
     texts: dict[str, str] = {}
 
-    for rendition in renditions:
+    # Several page-segmentation modes per rendition. They disagree
+    # substantially on packaging, and which one wins is not predictable from
+    # the image — sparse mode finds scattered label fragments that block mode
+    # merges into nonsense, while block mode reads the composition paragraph
+    # that sparse mode fragments.
+    # Upscaled renditions get one page-segmentation mode, not two. They are the
+    # expensive passes (up to 12 MP against ~2 MP native), and PSM_BLOCK is the
+    # right single choice for them: what upscaling exists to recover is the
+    # composition paragraph, which is a uniform block of small print. Halving
+    # their passes is a pure cost saving with no accuracy claim.
+    tasks: list[tuple[int, int, Any, int]] = []
+    for r_index, rendition in enumerate(renditions):
+        rendition_psms = (PSM_BLOCK,) if rendition.name.startswith("up") else psms
+        for p_index, psm in enumerate(rendition_psms):
+            tasks.append((r_index, p_index, rendition.image, psm))
+
+    # Every (rendition, psm) pass is independent, and _run_tesseract spends its
+    # time inside a subprocess with the GIL released — so threads give real
+    # parallelism here rather than the usual Python illusion.
+    #
+    # This is the single biggest cost in a scan: OCR was 10.1s of a 14.6s
+    # pipeline locally, and on Cloud Run's shared vCPU that became ~100s and
+    # timed out the request. Running the passes concurrently is what makes the
+    # fan-out affordable enough to keep — and the fan-out is where the accuracy
+    # comes from, so shrinking it instead would have cost answers.
+    results: dict[tuple[int, int], tuple[float, list[Word]]] = {}
+    if tasks:
+        workers = min(len(tasks), max(1, (os.cpu_count() or 2)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(_run_tesseract, image, psm, lang): (r_index, p_index)
+                for r_index, p_index, image, psm in tasks
+            }
+            for future in as_completed(futures):
+                key = futures[future]
+                try:
+                    words = future.result()
+                except Exception:  # noqa: BLE001 — one bad pass must not lose the scan
+                    logger.warning("tesseract pass %s failed; ignoring that pass", key)
+                    words = []
+                results[key] = (_score_words(words), words)
+
+    # Reduce in the ORIGINAL order. Completion order is nondeterministic, and
+    # `>` keeps the first of equal scores, so folding in arrival order would let
+    # two identical scans disagree about which psm won a tie.
+    for r_index, rendition in enumerate(renditions):
         best_for_this: list[Word] = []
         best_score = -1.0
-
-        # Several page-segmentation modes per rendition. They disagree
-        # substantially on packaging, and which one wins is not predictable from
-        # the image — sparse mode finds scattered label fragments that block
-        # mode merges into nonsense, while block mode reads the composition
-        # paragraph that sparse mode fragments.
-        # Upscaled renditions get one page-segmentation mode, not two. They are
-        # the expensive passes (up to 12 MP against ~2 MP native), and PSM_BLOCK
-        # is the right single choice for them: what upscaling exists to recover
-        # is the composition paragraph, which is a uniform block of small print.
-        # Halving their passes is a pure cost saving with no accuracy claim.
-        rendition_psms = (PSM_BLOCK,) if rendition.name.startswith("up") else psms
-
-        for psm in rendition_psms:
-            words = _run_tesseract(rendition.image, psm, lang)
-            score = _score_words(words)
+        for p_index in range(len(psms)):
+            hit = results.get((r_index, p_index))
+            if hit is None:
+                continue
+            score, words = hit
             if score > best_score:
                 best_score, best_for_this = score, words
 
