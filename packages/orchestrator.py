@@ -37,6 +37,7 @@ from typing import Any
 from packages.perception import boilerplate, tesseract_engine, vision_transcribe
 from packages.perception.dip.pipeline import DipResult, run_auto
 from packages.pharmacology.alternatives import AlternativesResult, find_alternatives
+from packages.pharmacology.facts import get_facts_table
 from packages.pharmacology.price import CeilingPriceTable, PriceCheck, check_price
 from packages.resolver.calibrate import Calibrator
 from packages.resolver.index import BrandIndex, BrandRecord, CompositionMatch
@@ -150,6 +151,11 @@ class ScanResult:
     no field here for an identification the model produced."""
     price_check: PriceCheck | None = None
     alternatives: AlternativesResult | None = None
+    facts: dict | None = None
+    """What the medicine treats and its side effects, from the clinical dataset.
+    None when identification failed; a record marked unavailable when the
+    dataset has no entry. Those are different states and the UI must not
+    collapse them."""
     reference_product: BrandRecord | None = None
     explanation: dict | None = None
     elapsed_ms: float = 0.0
@@ -166,6 +172,7 @@ class ScanResult:
             else None,
             "price_check": self.price_check.to_dict() if self.price_check else None,
             "alternatives": self.alternatives.to_dict() if self.alternatives else None,
+            "facts": self.facts,
             "explanation": self.explanation,
             "disclaimer": DISCLAIMER,
             "timing_ms": {**self.stages, "total": round(self.elapsed_ms, 1)},
@@ -206,6 +213,11 @@ class Orchestrator:
         # Every word appearing in any active-ingredient name the catalogue
         # knows. A closed vocabulary, used to narrow a query that drowned.
         self._ingredient_words = _ingredient_vocabulary(index)
+
+        # Clinical facts, loaded once. Absent data is a reported state, not an
+        # exception — same contract as the ceiling table and the interaction
+        # engine, so a deployment without the dataset serves everything else.
+        self.facts_table = get_facts_table()
 
     def _narrow(self, tokens: list[str]) -> list[str]:
         """Keep only tokens that name a known active ingredient.
@@ -522,11 +534,17 @@ class Orchestrator:
         )
         stages["pharmacology"] = round((time.perf_counter() - mark) * 1000, 1)
 
+        # Uses and side effects, looked up by composition. Read-only and
+        # deterministic — no model is involved, and an absent record is
+        # reported as absent rather than filled in.
+        facts = self.facts_table.lookup(best.signature).to_dict()
+
         return ScanResult(
             identification=identification,
             reference_product=reference,
             price_check=price,
             alternatives=alternatives,
+            facts=facts,
             stages=stages,
         )
 
