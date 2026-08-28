@@ -1,5 +1,24 @@
 # Deploying MediCure AI
 
+## Live deployment
+
+| piece | where | notes |
+|---|---|---|
+| API | https://medicure-api-607129285071.asia-south1.run.app | Cloud Run, `asia-south1`, scales to zero |
+| Frontend | https://medicure-ai-adarshcod30s-projects.vercel.app | Vercel, auto-deploys on push to `main` |
+| Database | MongoDB Atlas M0, `MediCure-AI` project | free tier, Mumbai |
+
+Running cost is about **Rs 11/month**, all of it Artifact Registry image
+storage. Compute is free because the service scales to zero; see the
+`--min-instances` warning in [cloud-run.md](cloud-run.md) before changing it.
+
+Check it with `/v1/health`, which reports every capability separately:
+
+```bash
+curl -s https://medicure-api-607129285071.asia-south1.run.app/v1/health | python3 -m json.tool
+```
+
+
 Three paths, in the order most people should try them.
 
 | path | cost | always on | setup | when it fits |
