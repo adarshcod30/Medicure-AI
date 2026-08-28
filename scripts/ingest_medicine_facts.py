@@ -38,7 +38,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from packages.resolver.index import DEFAULT_ARTIFACT_DIR, get_index  # noqa: E402
-from packages.resolver.normalize import composition_signature  # noqa: E402
+from packages.resolver.normalize import normalize_text  # noqa: E402
 
 RAW_DIR = REPO_ROOT / "data" / "raw" / "medicine_uses"
 OUT_PATH = REPO_ROOT / "data" / "processed" / "facts" / "medicine_facts.csv"
@@ -82,6 +82,40 @@ def main() -> int:
         return 0
 
     index = get_index(DEFAULT_ARTIFACT_DIR)
+
+    # An EXACT lookup on the normalised product name, built once.
+    #
+    # The first version fuzzy-searched the index per row, which was wrong twice
+    # over. It would have taken 3.2 hours (46 ms x 248,231 rows), and — far
+    # worse — fuzzy matching brand names to attach SIDE EFFECTS is dangerous:
+    # "Celebrex" and "Celexa" score 0.9 against each other and are different
+    # drugs, so a near-match would have given one medicine's adverse effects to
+    # another. Exactly the confusability the LASA feature exists to warn about.
+    #
+    # Full normalised name, not brand_root: root() strips strengths, so
+    # "Crocin 500" and "Crocin 650" would collapse together despite being
+    # different compositions with different dosing.
+    #
+    # Names that map to more than one composition are dropped rather than
+    # guessed at.
+    lookup: dict[str, tuple] = {}
+    ambiguous: set[str] = set()
+    for row_index in range(len(index)):
+        record = index.record(row_index)
+        if not record.signature:
+            continue
+        key = normalize_text(record.name)
+        if not key:
+            continue
+        seen = lookup.get(key)
+        if seen is None:
+            lookup[key] = record.signature
+        elif seen != record.signature:
+            ambiguous.add(key)
+    for key in ambiguous:
+        lookup.pop(key, None)
+    print(f"exact-match lookup: {len(lookup)} names "
+          f"({len(ambiguous)} dropped as ambiguous)")
     print(f"reading {len(files)} file(s) from {RAW_DIR}")
 
     rows: dict[tuple, dict] = {}
@@ -112,15 +146,13 @@ def main() -> int:
                 if not brand:
                     continue
 
-                # Resolve the brand into the catalogue, then key by its
-                # composition. A name the index cannot place is dropped: its
-                # facts could never be reached from a scan.
-                matches = index.search(brand, top_k=1, min_similarity=0.75)
-                if not matches:
-                    unmatched[brand.lower()] += 1
-                    continue
-                signature = matches[0].signature
+                # Exact, O(1). A name the catalogue does not carry verbatim is
+                # dropped: its facts could never be reached from a scan, and
+                # guessing which product was meant is precisely the mistake
+                # that would attach the wrong side effects.
+                signature = lookup.get(normalize_text(brand))
                 if not signature:
+                    unmatched[brand.lower()] += 1
                     continue
 
                 uses = _values(row, use_cols)
@@ -138,7 +170,7 @@ def main() -> int:
                 rows[signature] = {
                     "_score": score,
                     "composition_sig": repr(signature),
-                    "example_brand": matches[0].name,
+                    "example_brand": brand,
                     "uses": " | ".join(uses),
                     "side_effects": " | ".join(effects),
                     "therapeutic_class": " | ".join(_values(row, class_cols)),
