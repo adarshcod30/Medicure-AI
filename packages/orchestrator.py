@@ -40,11 +40,48 @@ from packages.pharmacology.alternatives import AlternativesResult, find_alternat
 from packages.pharmacology.price import CeilingPriceTable, PriceCheck, check_price
 from packages.resolver.calibrate import Calibrator
 from packages.resolver.index import BrandIndex, BrandRecord, CompositionMatch
+from packages.resolver.normalize import canonical_ingredient
 
 DISCLAIMER = (
     "This is information, not medical advice. Always confirm with a pharmacist "
     "or doctor before taking, changing or stopping any medicine."
 )
+
+def _ingredient_vocabulary(index: BrandIndex) -> set[str]:
+    """Every word used in any active-ingredient name in the catalogue."""
+    words: set[str] = set()
+    for signature in index._signatures:  # noqa: SLF001 - same package family
+        for component in signature or ():
+            name = canonical_ingredient(str(component[0]))
+            if name:
+                words.update(name.split())
+    words.discard("")
+    return words
+
+
+def _better(candidate, current) -> bool:
+    """Is `candidate` a strictly more useful identification than `current`?
+
+    Status first, probability only as a tie-break within the same status. A
+    confident answer beats an ambiguous one regardless of the numbers, because
+    the statuses mean different things to the reader; but two abstentions are
+    ranked by which one the calibrator liked more.
+    """
+    a, b = _rank(candidate.status), _rank(current.status)
+    if a != b:
+        return a > b
+    return candidate.probability > current.probability
+
+
+def _rank(status: str) -> int:
+    """Order identification statuses by how much they actually tell the user.
+
+    Used to decide whether a vision rescue improved anything. `unreadable` and
+    `abstained` are both refusals, but `abstained` at least names a closest
+    match, so it sits above.
+    """
+    return {"unreadable": 0, "abstained": 1, "ambiguous": 2, "confident": 3}.get(status, 0)
+
 
 COVERAGE_CAVEAT = (
     "Two things cause this: the photo may be too damaged to read, or the product "
@@ -166,6 +203,36 @@ class Orchestrator:
         # active ingredient can ever be filtered out as boilerplate.
         self._stopwords = boilerplate.build_stopwords(index.discriminative_vocabulary())
 
+        # Every word appearing in any active-ingredient name the catalogue
+        # knows. A closed vocabulary, used to narrow a query that drowned.
+        self._ingredient_words = _ingredient_vocabulary(index)
+
+    def _narrow(self, tokens: list[str]) -> list[str]:
+        """Keep only tokens that name a known active ingredient.
+
+        The blunt instrument that fixes a measured failure. A sharp photo of a
+        Crocin strip yields 122 tokens, because OCR reads the whole package
+        insert — dosage, contraindications, the manufacturer's address — and
+        every one of those words is RARE in a corpus of drug names, so
+        `boilerplate` scores them discriminative and keeps them. The one token
+        that mattered, 'paracetamol', was outvoted 121 to 1 and retrieval
+        returned "gynaecological products".
+
+        Narrowing to the ingredient vocabulary cut 122 tokens to 4 and returned
+        paracetamol 500mg. Vision transcription of the same strip went 96 -> 5
+        with the same answer, which is the useful part: two independent readers
+        converge once the prose is gone.
+
+        This is deliberately a SECOND attempt, never the first. The full bag
+        carries brand names, and brands are not in this vocabulary — narrowing
+        unconditionally would throw away the strongest signal on every strip
+        whose brand name reads cleanly."""
+        return [
+            t for t in tokens
+            if t in self._ingredient_words
+            or canonical_ingredient(t) in self._ingredient_words
+        ]
+
     # --- entry points -----------------------------------------------------
 
     def analyse_image(self, image_bytes: bytes, *, explain: bool = True) -> ScanResult:
@@ -181,7 +248,20 @@ class Orchestrator:
         # The quality gate fires before OCR, retrieval or any model call. A
         # photo this degraded cannot be identified by anything downstream, and
         # spending on it produces a confident-looking answer built on nothing.
-        if dip.quality.should_abstain:
+        #
+        # ...unless a vision model is available, in which case the gate was
+        # contradicting itself. `assess` sets should_abstain and
+        # use_vision_fallback from the same severity score, so an "unusable"
+        # photo was simultaneously marked "worth a vision call" and refused
+        # before that call could happen. Measured: seven of the twenty-eight
+        # labelled images returned `unreadable` this way, and Tesseract had
+        # already recovered 'meropenem' from one of them before the refusal
+        # discarded it.
+        #
+        # The gate still holds when there is no transcriber: without one there
+        # is genuinely nothing further to try, and refusing early saves the OCR
+        # fan-out on a hopeless image.
+        if dip.quality.should_abstain and self.transcriber is None:
             return ScanResult(
                 identification=Identification(
                     status="unreadable",
@@ -258,6 +338,93 @@ class Orchestrator:
             )
 
         result = self._resolve(query, strengths=ocr.strengths, stages=stages, started=started)
+
+        # --- second chance A: narrow the query -----------------------------
+        # Free (no model call), so it is tried first. See _narrow for why the
+        # full bag can lose to four of its own tokens.
+        if result.identification.status in {"abstained", "ambiguous"}:
+            narrowed = self._narrow(tokens)
+            if narrowed and len(narrowed) < len(tokens):
+                candidate = self._resolve(
+                    " ".join(narrowed),
+                    strengths=ocr.strengths,
+                    stages=stages,
+                    started=started,
+                )
+                if _better(candidate.identification, result.identification):
+                    result = candidate
+                    stages["narrowed_tokens"] = len(narrowed)
+
+        # --- second chance B: escalate on a weak RESULT, not a weak image ---
+        #
+        # The quality gate above asks "does this photograph look degraded?".
+        # That is not the same question as "did OCR read anything useful?", and
+        # a measured failure showed how far apart they can be.
+        #
+        # A sharp, evenly lit Crocin Advance strip scored verdict="good", so
+        # vision never fired. Tesseract read the dense instructions block and
+        # the manufacturer's address perfectly — 'every', 'days', 'without',
+        # 'drugs', 'patiala', 'gsk', 'licensed' — and missed the large
+        # "PARACETAMOL FAST RELEASE TABLETS" entirely. Those boilerplate tokens
+        # retrieved "gynaecological products", and the system abstained on a
+        # photograph a human reads at a glance. Rotating the same strip by 90
+        # degrees changed which text won and produced the right answer, which is
+        # how obvious it was that the *image* was never the problem.
+        #
+        # So: if the cheap path did not reach an answer, spend the vision call
+        # even on a good-looking image. The cost profile is right — one extra
+        # model call only when the free path has already failed — and vision
+        # still only ever returns TEXT, through the same resolver and the same
+        # calibration.
+        if (
+            self.transcriber
+            and vision_info is None
+            and result.identification.status in {"abstained", "ambiguous"}
+        ):
+            mark = time.perf_counter()
+            transcription = self.transcriber.transcribe(dip.processed)
+            stages["vision_rescue"] = round((time.perf_counter() - mark) * 1000, 1)
+
+            if transcription.available and transcription.tokens:
+                vision_tokens = boilerplate.filter_tokens(
+                    transcription.tokens, self._stopwords
+                )
+                merged, attribution = vision_transcribe.merge_tokens(tokens, vision_tokens)
+                # Three readings of the same strip, best one wins: everything
+                # merged, the vision text alone, and the vision text narrowed to
+                # ingredient names. On the Crocin strip the merged bag still
+                # lost — 60 tokens of insert prose outvoting the drug name —
+                # while the narrowed bag resolved it in five.
+                rescued = None
+                for bag in (merged, vision_tokens, self._narrow(vision_tokens)):
+                    if not bag:
+                        continue
+                    candidate = self._resolve(
+                        " ".join(bag),
+                        strengths=ocr.strengths,
+                        stages=stages,
+                        started=started,
+                    )
+                    if rescued is None or _better(candidate.identification, rescued.identification):
+                        rescued = candidate
+                if rescued is None:
+                    rescued = result
+                vision_info = {
+                    **transcription.to_dict(),
+                    "attribution": attribution,
+                    "trigger": "weak_result",
+                }
+                # Keep the rescue only if it actually improved the verdict.
+                # Vision text is not automatically better than Tesseract text,
+                # and quietly replacing a result with a worse one to justify the
+                # call would be its own kind of dishonesty.
+                if _better(rescued.identification, result.identification):
+                    result = rescued
+                else:
+                    vision_info["discarded"] = "did not improve the identification"
+            else:
+                vision_info = {**transcription.to_dict(), "trigger": "weak_result"}
+
         result.image_quality = quality
         result.ocr = ocr.to_dict()
         result.vision = vision_info

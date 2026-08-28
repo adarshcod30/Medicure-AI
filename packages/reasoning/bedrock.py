@@ -213,6 +213,7 @@ class BedrockClient:
         grounding_source: str | None = None,
         model_id: str | None = None,
         max_tokens: int | None = None,
+        use_guardrail: bool = True,
         tools: list[dict] | None = None,
     ) -> LlmResponse:
         """One Converse call.
@@ -255,7 +256,23 @@ class BedrockClient:
             else:
                 request["system"].append({"text": grounding_source})
 
-        guardrail = self._guardrail_config()
+        # `use_guardrail=False` is for calls that are PERCEPTION, not assertion.
+        #
+        # The contextual grounding filter scores generated text against a
+        # grounding source. Vision transcription has none — it is reading
+        # characters off a photograph, not making claims about retrieved facts —
+        # so the filter has nothing to ground against and blocks the response.
+        #
+        # That failure was silent and actively harmful: the guardrail's
+        # "could not be verified... was withheld" placeholder came back as
+        # `response.text`, and the transcriber fed those 21 words into the token
+        # bag as if they had been read off the strip. Every vision rescue was
+        # poisoning its own query.
+        #
+        # Nothing is weakened by skipping it here. Transcription output never
+        # reaches the user as prose; it becomes search tokens, and whatever it
+        # retrieves still passes through calibration and abstention.
+        guardrail = self._guardrail_config() if use_guardrail else None
         if guardrail:
             request["guardrailConfig"] = guardrail
 

@@ -184,10 +184,27 @@ class VisionTranscriber:
                 ],
                 model_id=self.client.model_id,
                 max_tokens=self.max_tokens,
+                # No guardrail on this call. See BedrockClient.converse: the
+                # contextual grounding filter needs a grounding source to score
+                # against, and transcription has none — it is reading characters
+                # off a photograph, not asserting facts. With the guardrail
+                # attached it blocked every call and returned its own "could not
+                # be verified" placeholder as the transcript.
+                use_guardrail=False,
             )
         except BedrockUnavailable as exc:
             self.last_error = str(exc)[:200]
             logger.info("vision transcription unavailable: %s", exc)
+            return Transcription(available=False, reason=self.last_error)
+
+        # Belt and braces. Even without a guardrail attached to this call, a
+        # blocked response must never be mistaken for a transcript: its
+        # placeholder text is fluent English and tokenises into two dozen words
+        # that then poison the retrieval query. Trusting response.text
+        # unconditionally is what let that happen.
+        if response.blocked_by_guardrail:
+            self.last_error = "guardrail blocked the transcription response"
+            logger.warning("vision transcription blocked by guardrail; ignoring output")
             return Transcription(available=False, reason=self.last_error)
 
         lines = _clean_lines(response.text)
