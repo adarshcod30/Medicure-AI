@@ -239,8 +239,6 @@ function AddToCabinet({ data }) {
   const [notice, setNotice] = useState(null);
 
   const id = data.identification || {};
-  const facts = data.facts;
-  const fallback = data.fallback;
   const signature = id.signature;
   if (!isAuthenticated()) return null;
   if (id.status !== 'confident') return null;
@@ -324,6 +322,8 @@ export default function ResultsDisplay({ data }) {
   if (!data) return null;
 
   const id = data.identification || {};
+  const facts = data.facts;
+  const fallback = data.fallback;
   const style = STATUS[id.status] || STATUS.abstained;
   const Icon = style.icon;
   const answered = id.status === 'confident' || id.status === 'ambiguous';
