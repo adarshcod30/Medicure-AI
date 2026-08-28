@@ -108,6 +108,39 @@ def render_fact_sheet(result) -> str:
         for step in price.workings:
             lines.append(f"  working: {step}")
 
+    # Clinical facts, when the dataset carries them. These are the fields users
+    # ask for first, and the ones the replaced system invented — so they appear
+    # here, inside the grounding source, where the guardrail can hold generated
+    # prose to them.
+    facts = result.facts
+    if facts and (facts.get("uses") or facts.get("side_effects")):
+        lines.append("")
+        lines.append(f"WHAT IT IS FOR: {'; '.join(facts.get('uses') or []) or 'not recorded'}")
+        effects = facts.get("side_effects") or []
+        if effects:
+            # Capped: the source lists up to 42 and a wall of them reads as a
+            # warning about the medicine rather than a list of possibilities.
+            shown = "; ".join(effects[:10])
+            more = f" (and {len(effects) - 10} more in the source)" if len(effects) > 10 else ""
+            lines.append(f"POSSIBLE SIDE EFFECTS: {shown}{more}")
+        if facts.get("therapeutic_class"):
+            lines.append(f"DRUG CLASS: {facts['therapeutic_class']}")
+        if facts.get("habit_forming"):
+            lines.append(f"HABIT FORMING: {facts['habit_forming']}")
+        if effects:
+            # Stated HERE, inside the grounding source, rather than asked for in
+            # the prompt. Instructing the model to add a caveat that appears
+            # nowhere in the source makes it emit an unsupported sentence, and
+            # the contextual grounding filter then blocks the whole answer for
+            # containing one. Measured on "what are the side effects?": the
+            # caveat in the prompt scored 0.21 and was blocked; the same caveat
+            # present in the source scored 0.99 and passed.
+            lines.append(
+                "These are possible effects recorded in a dataset. Not everyone "
+                "who takes this medicine will experience them."
+            )
+        lines.append(f"  source: {(facts.get('source') or {}).get('dataset', 'unknown')}")
+
     alternatives = result.alternatives
     if alternatives:
         lines.append("")

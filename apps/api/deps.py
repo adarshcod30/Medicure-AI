@@ -17,6 +17,7 @@ from packages.pharmacology.price import CeilingPriceTable
 from packages.reasoning.bedrock import BedrockClient
 from packages.perception.vision_transcribe import VisionTranscriber
 from packages.reasoning.explainer import Explainer
+from packages.reasoning.chat import ChatAnswerer
 from packages.reasoning.fallback import FallbackAnswerer
 from packages.resolver.calibrate import Calibrator, load_or_default
 from packages.resolver.index import BrandIndex
@@ -37,6 +38,7 @@ class AppState:
         self.orchestrator: Orchestrator | None = None
         self.bedrock: BedrockClient | None = None
         self.store: MongoStore | None = None
+        self.chat_answerer: ChatAnswerer | None = None
         self.startup_errors: list[str] = []
 
     @property
@@ -86,6 +88,9 @@ class AppState:
                 explainer = Explainer(self.bedrock)
                 transcriber = VisionTranscriber(self.bedrock)
                 fallback_answerer = FallbackAnswerer(self.bedrock)
+                self.chat_answerer = ChatAnswerer(
+                    self.bedrock, fallback_answerer=fallback_answerer
+                )
                 logger.info(
                     "bedrock enabled — explain=%s vision=%s",
                     settings.bedrock_fast_model_id, settings.bedrock_model_id,

@@ -26,7 +26,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .deps import state
-from .routers import auth, cabinet, history, interactions, lasa, metrics, scan, search
+from .routers import (
+    auth, cabinet, chat, history, interactions, lasa, metrics, scan, search,
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)-7s %(name)s: %(message)s"
@@ -88,6 +90,7 @@ app.include_router(history.router, prefix="/v1", tags=["history"])
 app.include_router(cabinet.router, prefix="/v1", tags=["cabinet"])
 app.include_router(interactions.router, prefix="/v1", tags=["interactions"])
 app.include_router(lasa.router, prefix="/v1", tags=["lasa"])
+app.include_router(chat.router, prefix="/v1", tags=["chat"])
 
 
 @app.get("/")
