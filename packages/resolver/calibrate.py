@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -39,11 +40,51 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
 
 from .corruption import CorruptionProfile, corrupt
+from .normalize import canonical_ingredient, normalize_text
 from .index import DEFAULT_ARTIFACT_DIR, BrandIndex, CompositionMatch
 
 logger = logging.getLogger(__name__)
 
-CALIBRATOR_VERSION = 1
+CALIBRATOR_VERSION = 2
+
+REAL_IMAGE_THRESHOLD_FLOOR = 0.55
+"""Lower bound on the abstention threshold, set from real photographs.
+
+fit_calibrator picks its threshold on SYNTHETIC corruptions at 95% precision,
+and for the v2 refit that came out at 0.473. On the 28 labelled real images
+that admitted a confident wrong answer -- ferric 1000mg for a pantoprazole
+strip at P=0.657, and an ORS sachet at 0.4731 against a threshold of 0.473,
+over the line by a thousandth.
+
+Measured across the same 28 images:
+
+    threshold   confident-and-wrong   confident answers
+      0.473              1                   19
+      0.550              0                   12
+      0.700              0                    7
+
+0.55 is the cheapest point that restored zero on that run. It costs coverage --
+those answers become `ambiguous`, which still shows the candidate and its
+probability, while a silent failure shows a wrong drug with no signal at all.
+
+Two honest caveats on that table, both worth keeping in view:
+
+The deterministic path (no vision) shows ZERO confident-wrong answers at every
+threshold tested, 0.473 included. Every silent failure observed came through
+the vision path, where the model is not deterministic -- the same 28 images
+scored 19, 20 and 21 hits across identical runs. So this floor reduces the
+RISK of a confident wrong answer; it does not make one impossible, and no
+threshold can while a sampling model sits in the pipeline.
+
+And 28 images is few. The floor is therefore a lower bound rather than a
+replacement: a refit measuring something stricter keeps its own value.
+Re-derive with `python -m eval.bench_photos --orchestrator` after any refit.
+"""
+
+BRAND_COVERAGE_FLOOR = 0.5
+"""How much of a query's brand-like text the catalogue must recognise for a
+short query to still count as well-supported. Half: a two-token brand where one
+token is known is ambiguous evidence, where both are known is not."""
 
 MIN_LEXICAL_SUPPORT = 3
 """Alphabetic tokens of 4+ characters required before answering *confidently*.
@@ -69,7 +110,87 @@ FEATURE_NAMES = (
     "long_token_fraction",
     "longest_token",
     "has_digits",
+    # --- catalogue evidence: is this product even in our namespace ---
+    "brand_token_coverage",
 )
+
+
+_BRAND_VOCABULARY: set[str] | None = None
+_NON_BRAND_WORDS: set[str] | None = None
+
+DOSAGE_FORM_WORDS = frozenset({
+    "tablet", "tablets", "capsule", "capsules", "syrup", "injection", "cream",
+    "drops", "suspension", "spray", "gel", "ointment", "solution", "powder",
+    "sachet", "strip", "lotion", "inhaler", "granules", "infusion",
+})
+
+
+def _brand_words(query: str) -> list[str]:
+    """Tokens that could plausibly be a BRAND name.
+
+    Ingredient names and dosage forms are excluded because every query has
+    them, in-catalogue or not — "tablet" is evidence of nothing. What remains
+    is the part of the query that should name a product this catalogue sells.
+
+    Split on non-letters so hyphenated brands survive: "Dytel-Amh" is two
+    perfectly good brand tokens, and treating it as one non-alphabetic blob
+    left a third of real products with no usable tokens at all.
+    """
+    global _NON_BRAND_WORDS
+    if _NON_BRAND_WORDS is None:
+        from .index import get_index
+
+        words = set(DOSAGE_FORM_WORDS)
+        for signature in get_index()._signatures:  # noqa: SLF001
+            for component in signature or ():
+                words.update(canonical_ingredient(str(component[0])).split())
+        _NON_BRAND_WORDS = words
+
+    out: list[str] = []
+    for chunk in re.split(r"[^a-z]+", normalize_text(query)):
+        if len(chunk) >= 4 and chunk not in _NON_BRAND_WORDS:
+            out.append(chunk)
+    return out
+
+
+def brand_token_coverage(query: str) -> float:
+    """Fraction of the query's brand-like tokens the catalogue actually knows.
+
+    The feature that separates "uncertain about a real product" from
+    "confident about the wrong space" — a distinction no existing feature could
+    express, and one no threshold could recover.
+
+    The measured failure: "Becosules Capsule" resolved to methylcobalamin +
+    pregabalin at P=0.4254, and "Dolo 650 Tablet" — correct, in the catalogue —
+    scored *exactly* 0.4254 too. Same isotonic bin, so no cutoff could keep one
+    and drop the other. Match quality cannot tell them apart because both
+    matches are genuinely mediocre; query quality cannot, because both queries
+    are clean, well-formed English.
+
+    What differs is whether the catalogue has ever heard of the product:
+    `becosules` appears in none of 253,973 names, `dolo` in many.
+
+    0.5 when the query has no brand-like tokens at all (a pure composition
+    search, say). Neutral is the honest value there — absence of brand evidence
+    is not evidence of absence.
+    """
+    words = _brand_words(query)
+    if not words:
+        return 0.5
+
+    global _BRAND_VOCABULARY
+    if _BRAND_VOCABULARY is None:
+        from .index import get_index
+
+        index = get_index()
+        vocabulary: set[str] = set()
+        for row in range(len(index)):
+            for chunk in re.split(r"[^a-z]+", normalize_text(index._columns["name"][row])):  # noqa: SLF001
+                if len(chunk) >= 4:
+                    vocabulary.add(chunk)
+        _BRAND_VOCABULARY = vocabulary
+
+    return sum(word in _BRAND_VOCABULARY for word in words) / len(words)
 
 
 def extract_features(matches: list[CompositionMatch], query: str) -> np.ndarray:
@@ -111,6 +232,7 @@ def extract_features(matches: list[CompositionMatch], query: str) -> np.ndarray:
         float(sum(1 for n in lengths if n >= 4) / len(lengths)) if lengths else 0.0,
         float(max(lengths)) if lengths else 0.0,
         float(any(c.isdigit() for c in query)),
+        brand_token_coverage(query),
     ]
 
     if not matches:
@@ -249,7 +371,8 @@ class Calibrator:
                  report: CalibrationReport | None = None):
         self.model = model
         self.isotonic = isotonic
-        self.threshold = threshold
+        # The fitted threshold, but never below the real-image floor.
+        self.threshold = max(threshold, REAL_IMAGE_THRESHOLD_FLOOR) if model else threshold
         self.report = report
 
     @property
@@ -308,7 +431,30 @@ class Calibrator:
         # learned features handle degenerate queries in general, this handles
         # the specific case where a numeral carries the whole match.
         if probability >= self.threshold:
-            if self.lexical_support(query) < MIN_LEXICAL_SUPPORT:
+            # The lexical-support gate, with an exemption the gate needed.
+            #
+            # It was measured on OCR fragments, where a numeral carried the
+            # whole match, and three word-tokens is a fair bar for that. But a
+            # TYPED query is short by nature: "Dolo 650 Tablet" has exactly two
+            # word tokens, and so does "Becosules Capsule". Both were clamped to
+            # threshold * 0.9 = 0.4257 — identical scores for a correct
+            # identification and a product the catalogue has never heard of,
+            # which no downstream threshold could then separate.
+            #
+            # brand_token_coverage is what distinguishes them: `dolo` appears in
+            # the catalogue's names, `becosules` in none of 253,973. When the
+            # catalogue recognises the brand, two tokens is real evidence and
+            # the clamp should not fire.
+            #
+            # It is applied HERE rather than left to the GBM because the GBM
+            # gives it 0.0013 importance — `top_similarity` at 0.52 dominates,
+            # and both queries have mediocre similarity. The signal is real but
+            # too weak to survive as one input among thirteen; as a gate it does
+            # exactly one job.
+            if (
+                self.lexical_support(query) < MIN_LEXICAL_SUPPORT
+                and brand_token_coverage(query) < BRAND_COVERAGE_FLOOR
+            ):
                 return "ambiguous", min(probability, self.threshold * 0.9)
             return "confident", probability
         if matches and probability >= self.threshold * 0.5:

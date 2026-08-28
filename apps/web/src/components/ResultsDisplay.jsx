@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AskAboutMedicine from './AskAboutMedicine';
 import {
   FiAlertTriangle, FiCamera, FiCheckCircle, FiChevronDown, FiChevronRight,
   FiHelpCircle, FiPlus, FiSlash, FiTag, FiTrendingDown,
@@ -238,6 +239,8 @@ function AddToCabinet({ data }) {
   const [notice, setNotice] = useState(null);
 
   const id = data.identification || {};
+  const facts = data.facts;
+  const fallback = data.fallback;
   const signature = id.signature;
   if (!isAuthenticated()) return null;
   if (id.status !== 'confident') return null;
@@ -370,6 +373,58 @@ export default function ResultsDisplay({ data }) {
         )}
 
         <AddToCabinet data={data} />
+      </div>
+
+      {/* Uses and side effects, straight from the dataset. Rendered inside the
+          verdict card's sibling so they read as part of the identified result,
+          and each carries the source the API supplied. */}
+      {facts && (facts.uses?.length > 0 || facts.side_effects?.length > 0) && (
+        <section style={{ marginTop: '1.1rem' }}>
+          {facts.uses?.length > 0 && (
+            <div style={{ marginBottom: '0.7rem' }}>
+              <h4 style={{ margin: '0 0 0.3rem', fontSize: '0.9rem' }}>What it is used for</h4>
+              <div style={{ fontSize: '0.9rem', color: '#334155' }}>{facts.uses.join(' · ')}</div>
+            </div>
+          )}
+          {facts.side_effects?.length > 0 && (
+            <div style={{ marginBottom: '0.7rem' }}>
+              <h4 style={{ margin: '0 0 0.3rem', fontSize: '0.9rem' }}>Possible side effects</h4>
+              <div style={{ fontSize: '0.9rem', color: '#334155' }}>
+                {facts.side_effects.slice(0, 10).join(' · ')}
+                {facts.side_effects.length > 10 && ` (+${facts.side_effects.length - 10} more)`}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
+                Possible effects recorded in a dataset — not effects you will have.
+              </div>
+            </div>
+          )}
+          {facts.source?.dataset && (
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              source: {facts.source.dataset}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* The model answering for a product the catalogue does not carry. Amber,
+          never green, and never merged with the cited fields above. */}
+      {fallback?.available && (
+        <section style={{
+          marginTop: '1.1rem', padding: '0.8rem 0.9rem', borderRadius: 10,
+          background: '#fffbeb', border: '1px solid #fde68a',
+        }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309', marginBottom: '0.35rem' }}>
+            NOT VERIFIED — MODEL KNOWLEDGE
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.55 }}>{fallback.text}</div>
+          <div style={{ fontSize: '0.78rem', color: '#92400e', marginTop: '0.45rem' }}>
+            {fallback.disclaimer}
+          </div>
+        </section>
+      )}
+
+      <AskAboutMedicine result={data} />
+      <div style={{ display: 'none' }}>
       </div>
 
       {data.explanation?.text && (

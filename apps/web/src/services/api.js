@@ -175,3 +175,19 @@ export function isAuthenticated() {
 }
 
 export default api;
+
+/**
+ * Follow-up question about one medicine.
+ *
+ * `subject` is the brand name, not the whole result: the server re-resolves it
+ * so the answer grounds against a fact sheet it produced itself this request.
+ *
+ * The reply's `grounded` flag is the important part. True means every claim
+ * traces to the retrieved records; false means the databases did not cover the
+ * question and the model answered from its own training. The UI must show
+ * those differently — that distinction is the entire point of the feature.
+ */
+export async function askAboutMedicine(question, subject, history = []) {
+  const { data } = await api.post('/chat', { question, subject, history });
+  return data;
+}
