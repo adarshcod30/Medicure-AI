@@ -27,13 +27,23 @@ you get when a strip is lying the other way round, could never be read at all.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import cv2
 import numpy as np
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from .dip import acquire
-from .tesseract_engine import TESSERACT_AVAILABLE, _run_tesseract, _score_words
+from .tesseract_engine import (
+    TESSERACT_AVAILABLE,
+    _available_cpus,
+    _run_tesseract,
+    _score_words,
+)
+
+logger = logging.getLogger(__name__)
 
 ROTATIONS = (0, 90, 180, 270)
 
@@ -96,10 +106,29 @@ def detect(
 
     probe, _ = acquire.limit_resolution(acquire.to_gray(image), PROBE_MAX_DIMENSION)
 
+    # Four independent Tesseract probes, run concurrently. This was 3.79s of a
+    # 4.34s DIP pass — 87% of it — because each probe waits on its own
+    # subprocess. Pool size comes from the CONTAINER's allocation, not the
+    # host's core count: sizing from os.cpu_count() on Cloud Run oversubscribed
+    # a 4-vCPU service badly enough to make parallel OCR slower than sequential.
+    #
+    # Order does not matter here the way it does in read_renditions — scores go
+    # into a dict keyed by angle and the winner is chosen by a sort afterwards,
+    # so completion order cannot change the result.
     scores: dict[int, float] = {}
-    for angle in ROTATIONS:
-        words = _run_tesseract(_rotate90(probe, angle), PROBE_PSM, lang)
-        scores[angle] = _score_words(words)
+    workers = min(len(ROTATIONS), _available_cpus())
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(_run_tesseract, _rotate90(probe, angle), PROBE_PSM, lang): angle
+            for angle in ROTATIONS
+        }
+        for future in as_completed(futures):
+            angle = futures[future]
+            try:
+                scores[angle] = _score_words(future.result())
+            except Exception:  # noqa: BLE001 — a failed probe is just a bad angle
+                logger.warning("orientation probe at %s degrees failed", angle)
+                scores[angle] = 0.0
 
     ordered = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
     best_angle, best_score = ordered[0]
