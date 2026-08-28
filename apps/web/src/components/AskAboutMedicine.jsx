@@ -60,8 +60,7 @@ export default function AskAboutMedicine({ result }) {
 
   return (
     <section style={{ marginTop: '1.5rem' }}>
-      <h3 style={{ fontSize: '1rem', margin: '0 0 0.15rem' }}>Ask about this medicine</h3>
-      <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: '#64748b' }}>
+      <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
         Answers come from the retrieved records above. Anything they do not cover
         is answered by the model and clearly marked unverified.
       </p>
@@ -79,20 +78,20 @@ export default function AskAboutMedicine({ result }) {
               borderRadius: 10,
               fontSize: '0.9rem',
               lineHeight: 1.55,
-              background: grounded ? '#f0fdf4' : '#fffbeb',
-              border: `1px solid ${grounded ? '#bbf7d0' : '#fde68a'}`,
+              background: grounded ? 'var(--success-bg)' : 'var(--warning-bg)',
+              border: `1px solid ${grounded ? 'var(--border-accent)' : 'rgba(245, 158, 11, 0.35)'}`,
             }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
                 fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.02em',
-                color: grounded ? '#15803d' : '#b45309', marginBottom: '0.35rem',
+                color: grounded ? 'var(--success)' : 'var(--warning)', marginBottom: '0.35rem',
               }}>
                 {grounded ? <FiCheckCircle size={13} /> : <FiAlertTriangle size={13} />}
                 {grounded ? 'FROM THE RECORDS ABOVE' : 'NOT VERIFIED — MODEL KNOWLEDGE'}
               </div>
-              <div style={{ color: '#1e293b' }}>{a.text || a.reason}</div>
+              <div style={{ color: 'var(--text-primary)' }}>{a.text || a.reason}</div>
               {!grounded && a.disclaimer && (
-                <div style={{ marginTop: '0.45rem', fontSize: '0.78rem', color: '#92400e' }}>
+                <div style={{ marginTop: '0.45rem', fontSize: '0.78rem', color: 'var(--warning)' }}>
                   {a.disclaimer}
                 </div>
               )}
@@ -117,7 +116,7 @@ export default function AskAboutMedicine({ result }) {
         <button type="submit" disabled={busy || !question.trim()}
           style={{
             padding: '0.6rem 0.9rem', borderRadius: 8, border: 'none',
-            background: busy ? '#94a3b8' : '#0f766e', color: 'white',
+            background: busy ? 'var(--text-muted)' : 'var(--accent-dark)', color: 'white',
             cursor: busy ? 'default' : 'pointer', display: 'flex',
             alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem',
           }}>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import AskAboutMedicine from './AskAboutMedicine';
 import {
   FiAlertTriangle, FiCamera, FiCheckCircle, FiChevronDown, FiChevronRight,
   FiHelpCircle, FiPlus, FiSlash, FiTag, FiTrendingDown,
@@ -25,30 +24,30 @@ import {
 const STATUS = {
   confident: {
     icon: FiCheckCircle,
-    color: '#15803d',
-    bg: '#f0fdf4',
-    border: '#bbf7d0',
+    color: 'var(--success)',
+    bg: 'var(--success-bg)',
+    border: 'var(--border-accent)',
     label: 'Identified',
   },
   ambiguous: {
     icon: FiHelpCircle,
-    color: '#b45309',
-    bg: '#fffbeb',
-    border: '#fde68a',
+    color: 'var(--warning)',
+    bg: 'var(--warning-bg)',
+    border: 'rgba(245, 158, 11, 0.35)',
     label: 'More than one possibility',
   },
   abstained: {
     icon: FiSlash,
-    color: '#b91c1c',
-    bg: '#fef2f2',
-    border: '#fecaca',
+    color: 'var(--danger)',
+    bg: 'var(--danger-bg)',
+    border: 'rgba(239, 68, 68, 0.35)',
     label: 'Not confident enough to say',
   },
   unreadable: {
     icon: FiCamera,
-    color: '#b91c1c',
-    bg: '#fef2f2',
-    border: '#fecaca',
+    color: 'var(--danger)',
+    bg: 'var(--danger-bg)',
+    border: 'rgba(239, 68, 68, 0.35)',
     label: 'Photo could not be read',
   },
 };
@@ -58,7 +57,7 @@ function Section({ title, children, right }) {
     <section style={{ marginTop: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em',
-                     color: '#64748b', margin: '0 0 0.5rem' }}>{title}</h3>
+                     color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>{title}</h3>
         {right}
       </div>
       {children}
@@ -73,7 +72,7 @@ function Collapsible({ label, children, defaultOpen = false }) {
       <button
         onClick={() => setOpen(!open)}
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                 color: '#475569', fontSize: '0.82rem', display: 'flex', alignItems: 'center',
+                 color: 'var(--text-secondary)', fontSize: '0.82rem', display: 'flex', alignItems: 'center',
                  gap: '0.3rem' }}
       >
         {open ? <FiChevronDown /> : <FiChevronRight />} {label}
@@ -92,7 +91,7 @@ function Source({ source }) {
   }[source.dataset] || source.dataset;
 
   return (
-    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
       <FiTag style={{ verticalAlign: '-1px' }} /> {label}
       {source.record_id ? ` · record ${source.record_id}` : ''}
       {source.caveat ? ` · ${source.caveat}` : ''}
@@ -106,19 +105,19 @@ function Confidence({ probability, calibrated, threshold = 0.83 }) {
   return (
     <div style={{ marginTop: '0.6rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem',
-                    color: '#475569', marginBottom: '0.25rem' }}>
+                    color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
         <span>{calibrated ? 'Calibrated confidence' : 'Raw similarity (not calibrated)'}</span>
         <strong>{pct}%</strong>
       </div>
-      <div style={{ position: 'relative', height: 8, background: '#e2e8f0', borderRadius: 4 }}>
+      <div style={{ position: 'relative', height: 8, background: 'var(--border)', borderRadius: 4 }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4,
-                      background: probability >= threshold ? '#16a34a' : '#f59e0b' }} />
+                      background: probability >= threshold ? 'var(--success)' : 'var(--warning)' }} />
         <div title={`answers above ${Math.round(threshold * 100)}%`}
              style={{ position: 'absolute', left: `${threshold * 100}%`, top: -3, bottom: -3,
-                      width: 2, background: '#334155' }} />
+                      width: 2, background: 'var(--text-secondary)' }} />
       </div>
       {calibrated && (
-        <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '0.35rem 0 0' }}>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '0.35rem 0 0' }}>
           Fitted on held-out data: answers scored {pct}% are correct about {pct}% of the time.
           The marker is the threshold below which this system declines to answer.
         </p>
@@ -131,26 +130,26 @@ function PriceCheck({ price }) {
   if (!price) return null;
 
   const tone = {
-    verified_over_ceiling: { color: '#b91c1c', icon: FiAlertTriangle },
-    verified_within_ceiling: { color: '#15803d', icon: FiCheckCircle },
-  }[price.status] || { color: '#475569', icon: FiHelpCircle };
+    verified_over_ceiling: { color: 'var(--danger)', icon: FiAlertTriangle },
+    verified_within_ceiling: { color: 'var(--success)', icon: FiCheckCircle },
+  }[price.status] || { color: 'var(--text-secondary)', icon: FiHelpCircle };
   const Icon = tone.icon;
 
   return (
     <Section title="Price check">
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
         <Icon style={{ color: tone.color, flexShrink: 0, marginTop: 3 }} />
-        <p style={{ margin: 0, color: '#1e293b', lineHeight: 1.5 }}>{price.message}</p>
+        <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.5 }}>{price.message}</p>
       </div>
 
       {price.workings?.length > 0 && (
         <Collapsible label="Show the arithmetic">
-          <pre style={{ margin: 0, padding: '0.6rem 0.75rem', background: '#f8fafc',
+          <pre style={{ margin: 0, padding: '0.6rem 0.75rem', background: 'var(--bg-secondary)',
                         border: '1px solid #e2e8f0', borderRadius: 6, fontSize: '0.76rem',
-                        color: '#334155', whiteSpace: 'pre-wrap' }}>
+                        color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
             {price.workings.join('\n')}
           </pre>
-          <p style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.4rem' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
             Computed from retrieved records, not generated by a language model.
           </p>
         </Collapsible>
@@ -174,14 +173,14 @@ function Alternatives({ alternatives }) {
       title="Cheaper equivalents"
       right={
         alternatives.jan_aushadhi_available ? (
-          <span style={{ fontSize: '0.72rem', color: '#15803d' }}>Jan Aushadhi available</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--success)' }}>Jan Aushadhi available</span>
         ) : null
       }
     >
-      <p style={{ margin: 0, color: '#1e293b', lineHeight: 1.5 }}>{alternatives.message}</p>
+      <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.5 }}>{alternatives.message}</p>
 
       {plausible.length === 0 ? (
-        <p style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.5rem' }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
           Nothing is listed here because nothing was found. This system does not suggest
           substitutes it cannot point to in a real dataset.
         </p>
@@ -190,22 +189,22 @@ function Alternatives({ alternatives }) {
           {plausible.map((alt) => (
             <li key={`${alt.kind}-${alt.name}`}
                 style={{ padding: '0.6rem 0.75rem', border: '1px solid #e2e8f0',
-                         borderRadius: 8, marginBottom: '0.5rem', background: '#fff' }}>
+                         borderRadius: 8, marginBottom: '0.5rem', background: 'var(--bg-card)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
-                  <strong style={{ color: '#0f172a' }}>{alt.name}</strong>
-                  <div style={{ fontSize: '0.76rem', color: '#475569', marginTop: 2 }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>{alt.name}</strong>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: 2 }}>
                     {alt.kind === 'jan_aushadhi' ? 'Jan Aushadhi Kendra' : alt.manufacturer}
                     {alt.pack?.label ? ` · ${alt.pack.label}` : ''}
                     {alt.form_differs ? ' · different dosage form' : ''}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <div style={{ color: '#15803d', fontWeight: 600 }}>
+                  <div style={{ color: 'var(--success)', fontWeight: 600 }}>
                     <FiTrendingDown style={{ verticalAlign: '-2px' }} />{' '}
                     {Math.round(alt.saving_percent)}% less
                   </div>
-                  <div style={{ fontSize: '0.76rem', color: '#475569' }}>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
                     ₹{alt.price_per_unit?.toFixed(2)} per unit
                   </div>
                 </div>
@@ -217,7 +216,7 @@ function Alternatives({ alternatives }) {
       )}
 
       {items.length > plausible.length && (
-        <p style={{ fontSize: '0.72rem', color: '#92400e', marginTop: '0.5rem' }}>
+        <p style={{ fontSize: '0.72rem', color: 'var(--warning)', marginTop: '0.5rem' }}>
           {items.length - plausible.length} further listing(s) were hidden: their prices imply
           savings above 90%, which usually means the source pack size does not match the
           recorded price rather than a genuine bargain.
@@ -268,7 +267,7 @@ function AddToCabinet({ data }) {
     <div style={{ marginTop: '0.9rem' }}>
       {state === 'added' ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                       color: '#15803d', fontSize: '0.85rem', fontWeight: 600 }}>
+                       color: 'var(--success)', fontSize: '0.85rem', fontWeight: 600 }}>
           <FiCheckCircle /> In your cabinet — interactions are checked on the cabinet page
         </span>
       ) : (
@@ -277,7 +276,7 @@ function AddToCabinet({ data }) {
           disabled={state === 'busy'}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                    padding: '0.45rem 0.9rem', borderRadius: 8, cursor: 'pointer',
-                   border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#15803d',
+                   border: '1px solid #bbf7d0', background: 'var(--success-bg)', color: 'var(--success)',
                    fontSize: '0.85rem', fontWeight: 600,
                    opacity: state === 'busy' ? 0.6 : 1 }}
         >
@@ -285,7 +284,7 @@ function AddToCabinet({ data }) {
         </button>
       )}
       {notice && (
-        <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0.4rem 0 0' }}>{notice}</p>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0' }}>{notice}</p>
       )}
     </div>
   );
@@ -297,7 +296,7 @@ function ImageQuality({ quality }) {
 
   return (
     <Collapsible label={`Image quality: ${quality.verdict}`}>
-      <div style={{ fontSize: '0.78rem', color: '#475569', lineHeight: 1.6 }}>
+      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
         <div>Focus (variance of Laplacian): {quality.blur_variance}</div>
         <div>Glare coverage: {(quality.glare_fraction * 100).toFixed(1)}%</div>
         <div>Text-scale contrast: {quality.text_contrast}</div>
@@ -306,11 +305,11 @@ function ImageQuality({ quality }) {
         <div>Perspective rectified: {quality.rectified ? 'yes' : 'no'}</div>
         <div>Denoising: {quality.denoise_method}</div>
         {!good && quality.reasons?.length > 0 && (
-          <div style={{ marginTop: '0.4rem', color: '#92400e' }}>
+          <div style={{ marginTop: '0.4rem', color: 'var(--warning)' }}>
             Issues: {quality.reasons.join('; ')}
           </div>
         )}
-        <div style={{ marginTop: '0.4rem', color: '#64748b' }}>
+        <div style={{ marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
           Processing stages: {(quality.dip_stages_applied || []).join(' → ')}
         </div>
       </div>
@@ -329,7 +328,7 @@ export default function ResultsDisplay({ data }) {
   const answered = id.status === 'confident' || id.status === 'ambiguous';
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div>
       {/* The verdict leads. When the system is unsure, that is the headline. */}
       <div style={{ padding: '1rem 1.15rem', borderRadius: 12, background: style.bg,
                     border: `1px solid ${style.border}` }}>
@@ -351,13 +350,13 @@ export default function ResultsDisplay({ data }) {
             only 1%"). That is the honest place for it: in context, at body
             size, hedged. */}
         {id.composition && answered && (
-          <h2 style={{ margin: '0.6rem 0 0', fontSize: '1.35rem', color: '#0f172a' }}>
+          <h2 style={{ margin: '0.6rem 0 0', fontSize: '1.35rem', color: 'var(--text-primary)' }}>
             {id.composition}
           </h2>
         )}
 
         {id.closest_brand && answered && (
-          <p style={{ margin: '0.3rem 0 0', color: '#475569', fontSize: '0.85rem' }}>
+          <p style={{ margin: '0.3rem 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Closest product: {id.closest_brand}
             {id.brands_sharing_composition > 1 &&
               ` — ${id.brands_sharing_composition} products share this exact composition`}
@@ -365,7 +364,7 @@ export default function ResultsDisplay({ data }) {
         )}
 
         {id.reason && (
-          <p style={{ margin: '0.7rem 0 0', color: '#1e293b', lineHeight: 1.55 }}>{id.reason}</p>
+          <p style={{ margin: '0.7rem 0 0', color: 'var(--text-primary)', lineHeight: 1.55 }}>{id.reason}</p>
         )}
 
         {id.status !== 'unreadable' && (
@@ -383,23 +382,23 @@ export default function ResultsDisplay({ data }) {
           {facts.uses?.length > 0 && (
             <div style={{ marginBottom: '0.7rem' }}>
               <h4 style={{ margin: '0 0 0.3rem', fontSize: '0.9rem' }}>What it is used for</h4>
-              <div style={{ fontSize: '0.9rem', color: '#334155' }}>{facts.uses.join(' · ')}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{facts.uses.join(' · ')}</div>
             </div>
           )}
           {facts.side_effects?.length > 0 && (
             <div style={{ marginBottom: '0.7rem' }}>
               <h4 style={{ margin: '0 0 0.3rem', fontSize: '0.9rem' }}>Possible side effects</h4>
-              <div style={{ fontSize: '0.9rem', color: '#334155' }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                 {facts.side_effects.slice(0, 10).join(' · ')}
                 {facts.side_effects.length > 10 && ` (+${facts.side_effects.length - 10} more)`}
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                 Possible effects recorded in a dataset — not effects you will have.
               </div>
             </div>
           )}
           {facts.source?.dataset && (
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               source: {facts.source.dataset}
             </div>
           )}
@@ -411,26 +410,25 @@ export default function ResultsDisplay({ data }) {
       {fallback?.available && (
         <section style={{
           marginTop: '1.1rem', padding: '0.8rem 0.9rem', borderRadius: 10,
-          background: '#fffbeb', border: '1px solid #fde68a',
+          background: 'var(--warning-bg)', border: '1px solid #fde68a',
         }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309', marginBottom: '0.35rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--warning)', marginBottom: '0.35rem' }}>
             NOT VERIFIED — MODEL KNOWLEDGE
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.55 }}>{fallback.text}</div>
-          <div style={{ fontSize: '0.78rem', color: '#92400e', marginTop: '0.45rem' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.55 }}>{fallback.text}</div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--warning)', marginTop: '0.45rem' }}>
             {fallback.disclaimer}
           </div>
         </section>
       )}
 
-      <AskAboutMedicine result={data} />
       <div style={{ display: 'none' }}>
       </div>
 
       {data.explanation?.text && (
         <Section title="In plain words">
-          <p style={{ margin: 0, lineHeight: 1.65, color: '#1e293b' }}>{data.explanation.text}</p>
-          <p style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.5rem' }}>
+          <p style={{ margin: 0, lineHeight: 1.65, color: 'var(--text-primary)' }}>{data.explanation.text}</p>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
             Written by a language model from the retrieved facts above, and checked against
             them. It states nothing that was not retrieved.
           </p>
@@ -439,7 +437,7 @@ export default function ResultsDisplay({ data }) {
 
       {data.explanation && !data.explanation.available && data.explanation.note && (
         <Section title="In plain words">
-          <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             {data.explanation.note}
           </p>
         </Section>
@@ -450,7 +448,7 @@ export default function ResultsDisplay({ data }) {
 
       {id.candidates_considered?.length > 1 && (
         <Section title="Other possibilities considered">
-          <ul style={{ margin: 0, paddingLeft: '1.1rem', color: '#475569', fontSize: '0.82rem' }}>
+          <ul style={{ margin: 0, paddingLeft: '1.1rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
             {id.candidates_considered.slice(1, 5).map((c) => (
               <li key={c.composition} style={{ marginBottom: '0.2rem' }}>
                 {c.composition} — similarity {c.top_similarity.toFixed(2)} (e.g. {c.closest_brand})
@@ -463,7 +461,7 @@ export default function ResultsDisplay({ data }) {
       <Section title="How this was worked out">
         <ImageQuality quality={data.image_quality} />
         {data.timing_ms && (
-          <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '0.5rem' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
             {Object.entries(data.timing_ms)
               .map(([k, v]) => `${k} ${v}ms`)
               .join(' · ')}
@@ -471,8 +469,8 @@ export default function ResultsDisplay({ data }) {
         )}
       </Section>
 
-      <p style={{ marginTop: '1.5rem', padding: '0.75rem 0.9rem', background: '#f1f5f9',
-                  borderRadius: 8, fontSize: '0.8rem', color: '#334155', lineHeight: 1.5 }}>
+      <p style={{ marginTop: '1.5rem', padding: '0.75rem 0.9rem', background: 'var(--bg-secondary)',
+                  borderRadius: 8, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
         {data.disclaimer}
       </p>
     </div>

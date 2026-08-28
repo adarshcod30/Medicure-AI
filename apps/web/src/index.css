@@ -26,7 +26,10 @@
   /* Text */
   --text-primary:    #f1f5f9;
   --text-secondary:  #94a3b8;
-  --text-muted:      #64748b;
+  --text-muted:      #8a99ad;  /* was #64748b: 3.83:1 on --bg-primary, below the
+                                  4.5:1 WCAG AA floor for body text. Measured in
+                                  the browser, compositing every translucent
+                                  layer, not eyeballed. */
   --text-accent:     #06d6a0;
 
   /* Borders */

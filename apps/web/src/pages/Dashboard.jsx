@@ -5,6 +5,7 @@ import ResultsDisplay from '../components/ResultsDisplay';
 import SafetyWarning from '../components/SafetyWarning';
 import { scanImage, searchMedicine } from '../services/api';
 import { locales } from '../locales';
+import AskAboutMedicine from '../components/AskAboutMedicine';
 
 export default function Dashboard() {
   const [file, setFile] = useState(null);
@@ -100,8 +101,8 @@ export default function Dashboard() {
                   padding: '0.4rem 0.8rem',
                   borderRadius: '6px',
                   border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--text)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-primary)',
                   outline: 'none',
                   cursor: 'pointer'
                 }}
@@ -142,8 +143,8 @@ export default function Dashboard() {
                   padding: '0.75rem 0.75rem 0.75rem 2.5rem',
                   borderRadius: '8px',
                   border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--text)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.95rem',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -191,9 +192,12 @@ export default function Dashboard() {
               <ResultsDisplay data={result} />
             </section>
 
-            {/* Right: Chatbot */}
-            <section style={{ position: 'sticky', top: '100px' }}>
+            {/* Right: Chatbot. The heading alone used to live here, so this
+                column rendered empty and half the screen went to waste while
+                the results were squeezed into the other half. */}
+            <section className="card" style={{ position: 'sticky', top: '100px' }}>
               <h3 style={{ marginBottom: '1rem' }}>{t.follow_up_title}</h3>
+              <AskAboutMedicine result={result} />
             </section>
           </div>
         )}
