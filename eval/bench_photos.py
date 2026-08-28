@@ -45,6 +45,12 @@ from packages.resolver.calibrate import load_or_default  # noqa: E402
 from packages.resolver.index import get_index  # noqa: E402
 
 
+def _ingredient_hit(predicted: str, expect: list) -> bool:
+    """Does the predicted composition name any expected active ingredient?"""
+    low = (predicted or "").lower()
+    return any(word.lower() in low for word in expect)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dir", type=Path, default=REPO_ROOT / "data" / "raw" / "photos")
@@ -60,6 +66,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-text-detection", dest="text_detection",
                         action="store_false",
                         help="force the MSER text-crop rendition OFF")
+    parser.add_argument(
+        "--orchestrator",
+        action="store_true",
+        help="measure the ORCHESTRATOR path instead of the raw pipeline — "
+             "this is what production actually runs",
+    )
     args = parser.parse_args(argv)
 
     if not args.labels.exists():
@@ -89,12 +101,60 @@ def main(argv: list[str] | None = None) -> int:
         )
         print("vision transcription ENABLED")
 
+    orchestrator = None
+    if args.orchestrator:
+        from apps.api.config import get_settings
+        from apps.api.deps import AppState
+        state = AppState()
+        state.startup(get_settings())
+        orchestrator = state.orchestrator
+        print(f"measuring the ORCHESTRATOR path "
+              f"(vision {'on' if orchestrator.transcriber else 'off'})")
+
     rows = []
     started = time.perf_counter()
 
     for entry in entries:
         path = args.dir.parent / entry.get("dir", "photos") / entry["file"]
         if not path.exists():
+            continue
+
+        # --orchestrator measures the path production actually serves, which
+        # includes the quality gate, the ingredient-narrowing retry and the
+        # vision rescue. The raw path below sees none of those, and that gap
+        # hid four real bugs: it reported an unchanged 13/28 while the
+        # orchestrator went from 10/28 to 21/28 on the same images. A benchmark
+        # that cannot see the code under test is worse than no benchmark,
+        # because it reads as reassurance.
+        if args.orchestrator:
+            result = orchestrator.analyse_image(path.read_bytes(), explain=False)
+            ident = result.identification
+            predicted = ident.composition or ""
+            expected = [e.lower() for e in entry["expect"]]
+            low = predicted.lower()
+            top5 = " ".join(
+                str(c.get("composition", "")) for c in ident.candidates
+            ).lower()
+            rows.append({
+                "file": entry["file"],
+                "source": entry.get("source", "phone_capture"),
+                "brand": entry.get("brand"),
+                "defects": entry.get("defects", []),
+                "expect": expected,
+                "predicted": predicted or None,
+                "hit": bool(expected) and any(e in low for e in expected),
+                "hit_top5": bool(expected) and any(e in top5 for e in expected),
+                "representable": bool(expected),
+                "status": ident.status,
+                "probability": round(ident.probability, 3),
+                "quality": (result.image_quality or {}).get("verdict", "n/a"),
+                "orientation": 0,
+                "ocr_confidence": round((result.ocr or {}).get("mean_confidence", 0.0), 1),
+                "tokens_raw": len((result.ocr or {}).get("tokens", []) or []),
+                "tokens_kept": result.stages.get("narrowed_tokens", 0),
+                "vision": bool(result.vision),
+                "tokens": ((result.ocr or {}).get("tokens") or [])[:12],
+            })
             continue
 
         image = acquire.decode(path.read_bytes())
