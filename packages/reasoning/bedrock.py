@@ -203,6 +203,33 @@ class BedrockClient:
             config["streamProcessingMode"] = "sync"
         return config
 
+    def apply_guardrail_to_output(self, text: str) -> list[str]:
+        """Screen generated text against the guardrail's DENIED TOPICS.
+
+        Standalone ApplyGuardrail, not part of a Converse call. That matters
+        for the fallback path: contextual grounding needs a source to score
+        against, and the fallback has none by definition — but the topic policy
+        has no such dependency, so "no diagnosis, no dosage advice, no safety
+        assurances" survives even where grounding cannot.
+
+        Returns the names of topics that fired, empty when the text is clean.
+        """
+        if not self.guardrail_id:
+            return []
+        response = self._client.apply_guardrail(
+            guardrailIdentifier=self.guardrail_id,
+            guardrailVersion=self.guardrail_version,
+            source="OUTPUT",
+            content=[{"text": {"text": text}}],
+        )
+        if (response.get("action") or "").upper() != "GUARDRAIL_INTERVENED":
+            return []
+        return [
+            topic.get("name", "?")
+            for assessment in response.get("assessments", [])
+            for topic in assessment.get("topicPolicy", {}).get("topics", [])
+        ]
+
     # --- invocation -------------------------------------------------------
 
     def converse(

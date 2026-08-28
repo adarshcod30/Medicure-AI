@@ -17,6 +17,7 @@ from packages.pharmacology.price import CeilingPriceTable
 from packages.reasoning.bedrock import BedrockClient
 from packages.perception.vision_transcribe import VisionTranscriber
 from packages.reasoning.explainer import Explainer
+from packages.reasoning.fallback import FallbackAnswerer
 from packages.resolver.calibrate import Calibrator, load_or_default
 from packages.resolver.index import BrandIndex
 from packages.storage import MongoStore
@@ -68,6 +69,7 @@ class AppState:
 
         explainer = None
         transcriber = None
+        fallback_answerer = None
         if settings.enable_bedrock:
             try:
                 self.bedrock = BedrockClient(
@@ -83,6 +85,7 @@ class AppState:
                 )
                 explainer = Explainer(self.bedrock)
                 transcriber = VisionTranscriber(self.bedrock)
+                fallback_answerer = FallbackAnswerer(self.bedrock)
                 logger.info(
                     "bedrock enabled — explain=%s vision=%s",
                     settings.bedrock_fast_model_id, settings.bedrock_model_id,
@@ -125,6 +128,7 @@ class AppState:
             explainer=explainer,
             transcriber=transcriber,
             dense_reranker=dense_reranker,
+            fallback_answerer=fallback_answerer,
         )
 
     async def connect_store(self, settings: Settings) -> None:

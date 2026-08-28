@@ -30,6 +30,7 @@ system its prose, not its judgement.
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -42,6 +43,8 @@ from packages.pharmacology.price import CeilingPriceTable, PriceCheck, check_pri
 from packages.resolver.calibrate import Calibrator
 from packages.resolver.index import BrandIndex, BrandRecord, CompositionMatch
 from packages.resolver.normalize import canonical_ingredient
+
+logger = logging.getLogger(__name__)
 
 DISCLAIMER = (
     "This is information, not medical advice. Always confirm with a pharmacist "
@@ -151,6 +154,13 @@ class ScanResult:
     no field here for an identification the model produced."""
     price_check: PriceCheck | None = None
     alternatives: AlternativesResult | None = None
+    fallback: dict | None = None
+    """The model answering from its own training, when retrieval had nothing.
+
+    A SEPARATE field from `facts` on purpose. Everything in `facts` carries a
+    source; everything here carries verified=False and a disclaimer. Nothing
+    merges them, so a UI cannot render model output where a citation belongs."""
+
     facts: dict | None = None
     """What the medicine treats and its side effects, from the clinical dataset.
     None when identification failed; a record marked unavailable when the
@@ -173,6 +183,7 @@ class ScanResult:
             "price_check": self.price_check.to_dict() if self.price_check else None,
             "alternatives": self.alternatives.to_dict() if self.alternatives else None,
             "facts": self.facts,
+            "fallback": self.fallback,
             "explanation": self.explanation,
             "disclaimer": DISCLAIMER,
             "timing_ms": {**self.stages, "total": round(self.elapsed_ms, 1)},
@@ -190,6 +201,7 @@ class Orchestrator:
         explainer: Any | None = None,
         transcriber: Any | None = None,
         dense_reranker: Any | None = None,
+        fallback_answerer: Any | None = None,
     ):
         self.index = index
         self.calibrator = calibrator
@@ -197,6 +209,11 @@ class Orchestrator:
         self.explainer = explainer
         self.transcriber = transcriber
         self.dense_reranker = dense_reranker
+        self.fallback_answerer = fallback_answerer
+        """Optional. Answers from the model's own knowledge when retrieval
+        found nothing, clearly labelled unverified. Absent means the system
+        simply says it could not identify the product, which is the older and
+        stricter behaviour."""
         """Optional embedding-based reranker over the lexical candidates. It
         reorders, never introduces — see resolver/dense.py — and any failure
         inside it degrades to the lexical ranking. Enabled by measurement
@@ -489,7 +506,11 @@ class Orchestrator:
                 "Nothing in the database of 253,973 Indian medicines matches this "
                 "closely enough to name. " + COVERAGE_CAVEAT
             )
-            return ScanResult(identification=identification, stages=stages)
+            return ScanResult(
+                identification=identification,
+                fallback=self._ask_model(query),
+                stages=stages,
+            )
 
         best = matches[0]
         identification.composition = best.label
@@ -505,7 +526,11 @@ class Orchestrator:
                 "is not being offered as one. "
                 + COVERAGE_CAVEAT
             )
-            return ScanResult(identification=identification, stages=stages)
+            return ScanResult(
+                identification=identification,
+                fallback=self._ask_model(query, subject=best.best_name),
+                stages=stages,
+            )
 
         if status == "ambiguous" and len(matches) > 1:
             identification.reason = (
@@ -547,6 +572,33 @@ class Orchestrator:
             facts=facts,
             stages=stages,
         )
+
+    def _ask_model(self, query: str, *, subject: str = "") -> dict | None:
+        """The model's own knowledge, when retrieval could not identify anything.
+
+        Deliberately the exception to this project's central rule, and worth
+        stating why. Refusing outright was measured against a real case: a user
+        photographs Becosules, the catalogue has zero entries for it, and the
+        strict system says "not in the database" while the model plainly knows
+        it is a B-complex supplement. Silence is only safer than an answer the
+        user cannot tell is unverified.
+
+        So the answer is given and labelled, never blended. It lands in
+        `fallback`, never in `facts`; it carries verified=False and a
+        disclaimer; and the guardrail's denied-topic policy still screens it,
+        so "no diagnosis, no dosage" survives even though grounding cannot.
+        """
+        if self.fallback_answerer is None:
+            return None
+        try:
+            answer = self.fallback_answerer.answer(
+                "What is this medicine, and what is it generally used for?",
+                subject=subject or query,
+            )
+            return answer.to_dict()
+        except Exception as exc:  # noqa: BLE001 - a failed fallback must not fail the scan
+            logger.warning("fallback answerer failed: %s", exc)
+            return None
 
     def _explain(self, result: ScanResult, stages: dict) -> dict | None:
         mark = time.perf_counter()
