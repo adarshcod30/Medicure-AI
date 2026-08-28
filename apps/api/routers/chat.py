@@ -75,5 +75,6 @@ def chat(
         request.question,
         result,
         history=[m.model_dump() for m in request.history],
+        subject=request.subject,
     )
     return {"question": request.question, "answer": turn.to_dict()}

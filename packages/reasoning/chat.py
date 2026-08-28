@@ -128,7 +128,11 @@ class ChatAnswerer:
         self.max_tokens = max_tokens
 
     def answer(
-        self, question: str, result, history: list[dict] | None = None
+        self,
+        question: str,
+        result,
+        history: list[dict] | None = None,
+        subject: str = "",
     ) -> ChatTurn:
         fact_sheet = render_fact_sheet(result)
         messages = self._messages(question, history or [])
@@ -169,7 +173,7 @@ class ChatAnswerer:
             )
 
         unverified = self.fallback_answerer.answer(
-            question, subject=_subject(result)
+            question, subject=_subject(result, subject)
         )
         return ChatTurn(
             text=unverified.text,
@@ -203,8 +207,28 @@ class ChatAnswerer:
         return messages
 
 
-def _subject(result) -> str:
+def _subject(result, asked: str = "") -> str:
+    """What the unverified answer is allowed to call this medicine.
+
+    Only a CONFIDENT identification may rename the subject. On an abstention
+    `closest_brand` still holds the nearest candidate — that is deliberate, the
+    UI shows it as "did you mean?" — but it is a guess, not an answer, and
+    handing it to the model makes the model discuss the wrong drug entirely.
+
+    Asking about Ozempic, which this catalogue does not carry, resolved to
+    "Empic 125mg/125mg Capsule" (ampicillin + cloxacillin) at probability 0.0,
+    status abstained. The fallback then opened with "I do not recognize the
+    product Empic 125mg/125mg Capsule" — a wrong drug name, presented to the
+    user as the thing they had asked about. The calibrator had abstained
+    correctly; this function ignored it.
+
+    So when the resolver is not confident, the subject stays in the user's own
+    words. An unverified answer about the drug they named beats a confident
+    sentence about a drug they did not.
+    """
     identification = getattr(result, "identification", None)
     if identification is None:
-        return ""
-    return identification.closest_brand or identification.composition or ""
+        return asked
+    if getattr(identification, "status", "") == "confident":
+        return identification.closest_brand or identification.composition or asked
+    return asked or identification.composition or ""
