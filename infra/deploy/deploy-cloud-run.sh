@@ -35,25 +35,39 @@ MIN_INSTANCES=0
 
 # Bounds the blast radius. Without a cap, a crawler or a retry loop can fan out
 # to Cloud Run's default 100 instances and spend real money before you notice.
-MAX_INSTANCES=3
+MAX_INSTANCES=5
 
 # --- the two settings that decide whether it crashes ---------------------
 #
-# Measured on this machine: 806 MB resident once the index is loaded, peaking
-# at 1,536 MB during an image scan (DIP holds several full-resolution
-# intermediates). 1 GiB OOMs on the main use case; 2 GiB leaves ~512 MB.
+# Measured: 806 MB resident once the index is loaded, peaking at 1,244 MB
+# during an image scan (DIP holds several full-resolution intermediates; the
+# peak was 1,536 MB before the OCR fan-out was parallelised). 1 GiB OOMs on the
+# main use case.
+#
+# CPU=4 is not optional. At 1 vCPU a scan took 100-120s against 11s locally and
+# blew through the request timeout — every real photo returned HTTP 504. The
+# pipeline is OCR- and OpenCV-heavy and Cloud Run's shared vCPU is roughly 10x
+# slower than a laptop core.
 MEMORY=2Gi
-CPU=1
+CPU=4
 
-# Cloud Run defaults to 80 concurrent requests per instance. Each in-flight
-# scan costs ~730 MB on top of the shared 806 MB index, so two at once need
-# ~2.3 GB and the instance is killed. One request per instance is the honest
-# setting for this workload; concurrency is bought with memory, not wishes.
+# Cloud Run defaults to 80 concurrent requests per instance, which would OOM
+# instantly. But the reason this stays at 1 is latency, not memory: after
+# parallelising OCR and the orientation probes, a scan uses all 4 vCPUs. Two
+# concurrent scans on one instance would split them and each take roughly twice
+# as long for the same total throughput.
+#
+# Memory would now allow it — a scan costs ~438 MB above the shared 806 MB
+# index, so two fit in 2 GiB. Capacity comes from MAX_INSTANCES instead: each
+# concurrent user gets an instance with all four cores, and Cloud Run only
+# bills instances that exist. Waiting 25s is acceptable; waiting 50s because
+# someone else clicked at the same moment is not.
 CONCURRENCY=1
 
-# A scan is ~5s warm. 120s is generous enough for a cold start plus a large
-# upload, and bounded so a hung request cannot bill indefinitely.
-TIMEOUT=120
+# A warm scan is ~25s on this hardware. 300s covers a cold start (image pull
+# plus a 2s index load) and a large upload, and is bounded so a hung request
+# cannot bill indefinitely. The earlier 120s was not enough and returned 504.
+TIMEOUT=300
 
 echo "project      : $PROJECT"
 echo "region       : $REGION"
