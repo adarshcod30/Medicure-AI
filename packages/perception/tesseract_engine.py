@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -38,6 +39,12 @@ from typing import Any
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Set before pytesseract ever launches the binary. Tesseract sizes its OpenMP
+# pool from the host CPU count, so with several passes running concurrently
+# each one would try to claim the whole machine. The parallelism belongs to the
+# thread pool in read_renditions; each pass stays single-threaded.
+os.environ.setdefault("OMP_THREAD_LIMIT", "1")
 
 try:
     import pytesseract
@@ -178,9 +185,18 @@ def _run_tesseract(image: np.ndarray, psm: int, lang: str) -> list[Word]:
     if not TESSERACT_AVAILABLE:
         return []
 
+    # OMP_THREAD_LIMIT=1 keeps each pass single-threaded. Tesseract spawns an
+    # OpenMP pool sized to the host's CPU count, so N passes running
+    # concurrently would each claim the whole machine and spend their time
+    # fighting each other for it — which is exactly what turned parallel OCR
+    # into a slowdown on Cloud Run. The parallelism belongs to the pool above,
+    # not to each worker.
     config = f"--oem 1 --psm {psm}"
     try:
-        data = pytesseract.image_to_data(image, lang=lang, config=config, output_type=Output.DICT)
+        data = pytesseract.image_to_data(
+            image, lang=lang, config=config, output_type=Output.DICT,
+            timeout=0,
+        )
     except Exception:  # noqa: BLE001 - a failed pass must not sink the request
         return []
 
@@ -223,6 +239,32 @@ def _score_words(words: list[Word]) -> float:
 RENDITION_SCORE_FLOOR = 0.25
 """A rendition contributes tokens only if it scores at least this fraction of
 the best rendition's score. See `read_renditions`."""
+
+
+def _available_cpus() -> int:
+    """CPUs this CONTAINER may use, not the ones the host happens to have.
+
+    os.cpu_count() reports the machine, and on Cloud Run the machine is large
+    while the allocation is small. Sizing the pool from it oversubscribed a
+    4-vCPU service badly enough to make parallel OCR SLOWER than sequential:
+    photo_10 went 26s -> 43s and a phone-sized image 35s -> 64s, with correct
+    answers throughout, so nothing failed — it just thrashed.
+
+    sched_getaffinity respects cpuset; cgroup v2's cpu.max carries the quota
+    Cloud Run actually sets. Whichever is tighter wins.
+    """
+    cpus = os.cpu_count() or 2
+    try:
+        cpus = min(cpus, len(os.sched_getaffinity(0)))
+    except AttributeError:  # not on Linux (macOS dev machines)
+        pass
+    try:
+        quota, period = pathlib.Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            cpus = min(cpus, max(1, int(int(quota) / int(period))))
+    except (OSError, ValueError):
+        pass
+    return max(1, cpus)
 
 
 def read_renditions(
@@ -283,7 +325,7 @@ def read_renditions(
     # comes from, so shrinking it instead would have cost answers.
     results: dict[tuple[int, int], tuple[float, list[Word]]] = {}
     if tasks:
-        workers = min(len(tasks), max(1, (os.cpu_count() or 2)))
+        workers = min(len(tasks), _available_cpus())
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
                 pool.submit(_run_tesseract, image, psm, lang): (r_index, p_index)
