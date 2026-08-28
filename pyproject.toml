@@ -25,7 +25,18 @@ dependencies = [
     "pytesseract>=0.3.13",
 
     # --- ML / resolver ---
-    "scikit-learn>=1.5.0",
+    # Upper bound is load-bearing, not caution. data/artifacts/calibrator.joblib
+    # is a pickled GradientBoostingClassifier, and scikit-learn relocates
+    # private modules between MINOR versions. With an open bound the container
+    # resolved 1.9.0 against an artifact fitted by 1.7.2 and failed with
+    # "ModuleNotFoundError: No module named '_loss'" -- which surfaced not as a
+    # crash but as calibrated=false in production, because the loader falls
+    # back rather than blocking startup.
+    #
+    # Raise this ceiling only together with re-running scripts/fit_calibrator.py
+    # and rebuilding the image; the Dockerfile asserts the artifact loads, so a
+    # mismatch fails the build rather than shipping.
+    "scikit-learn>=1.7,<1.8",
     "pandas>=2.2.0",
     "joblib>=1.4.0",
     "rapidfuzz>=3.9.0",

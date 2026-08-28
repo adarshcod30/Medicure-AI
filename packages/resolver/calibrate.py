@@ -28,6 +28,7 @@ more likely correct — rather than a sigmoid shape the data need not have.
 
 from __future__ import annotations
 
+import logging
 import random
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,6 +40,8 @@ from sklearn.isotonic import IsotonicRegression
 
 from .corruption import CorruptionProfile, corrupt
 from .index import DEFAULT_ARTIFACT_DIR, BrandIndex, CompositionMatch
+
+logger = logging.getLogger(__name__)
 
 CALIBRATOR_VERSION = 1
 
@@ -534,11 +537,25 @@ def fit(
 
 
 def load_or_default(artifact_dir: Path = DEFAULT_ARTIFACT_DIR) -> Calibrator:
-    """Load the fitted calibrator, or a pass-through one if it is absent."""
+    """Load the fitted calibrator, or a pass-through one if it is absent.
+
+    Falling back is deliberate — a stale artifact must not stop the service
+    starting — but the reason is now logged. Swallowing it silently cost real
+    time: a Cloud Run deploy served `probability: 0.99, calibrated: false` and
+    the only signal was a health-check line saying "not fitted", which reads
+    like the file is missing when it may well be present and unreadable.
+    """
     path = Path(artifact_dir) / "calibrator.joblib"
     if not path.exists():
+        logger.warning("calibrator artifact not found at %s", path)
         return Calibrator.unfitted()
     try:
         return Calibrator.load(path)
-    except Exception:  # noqa: BLE001 - a stale artifact must not block startup
+    except Exception as exc:  # noqa: BLE001 - a stale artifact must not block startup
+        logger.warning(
+            "calibrator at %s exists but could not be loaded (%s: %s) — "
+            "falling back to unfitted. A version skew between the environment "
+            "that fitted it and this one is the usual cause.",
+            path, type(exc).__name__, exc,
+        )
         return Calibrator.unfitted()

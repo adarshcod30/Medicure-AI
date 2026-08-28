@@ -42,6 +42,19 @@ RUN PYTHONPATH=/build python scripts/build_index.py --quiet
 # scripts/fit_calibrator.py locally, then rebuild the image.
 COPY data/artifacts/calibrator.joblib data/artifacts/calibration_report.json ./data/artifacts/
 
+# Fail the build if the artifact does not actually load HERE. It is pickled by
+# whichever environment fitted it, and this image resolves its own numpy and
+# scikit-learn versions, so "the file is present" and "the file is usable" are
+# different claims. Without this check the image builds green and the service
+# reports calibrated=false at runtime, which is a far more expensive place to
+# discover it.
+RUN PYTHONPATH=/build python -c "\
+from pathlib import Path; \
+from packages.resolver.calibrate import load_or_default; \
+c = load_or_default(Path('/build/data/artifacts')); \
+assert c.is_fitted, 'calibrator present but not usable in this image'; \
+print('calibrator verified: loads and is fitted')"
+
 # --- runtime ---
 FROM python:3.12-slim
 
