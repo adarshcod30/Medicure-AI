@@ -193,12 +193,18 @@ def test_signature_lookup_finds_substitutable_products():
 # --- calibration ----------------------------------------------------------
 
 
-def _match(similarity: float, support: int = 1) -> CompositionMatch:
+def _match(
+    similarity: float, support: int = 1, ingredient: str = "x", name: str = "X"
+) -> CompositionMatch:
+    """A candidate. `ingredient` matters to any test that reaches `decide`:
+    the corroboration gate requires the answer to appear in the query, so a
+    fixture whose composition has nothing to do with its query is correctly
+    refused a confident verdict."""
     return CompositionMatch(
-        signature=(("x", 1.0, "mg", None),),
-        label="x 1mg",
+        signature=((ingredient, 1.0, "mg", None),),
+        label=f"{ingredient} 1mg",
         best_row=0,
-        best_name="X",
+        best_name=name,
         top_similarity=similarity,
         aggregate_score=similarity,
         support=support,
@@ -265,9 +271,10 @@ def test_decide_returns_three_states():
     # is being tested here — see test_a_numeric_only_match_is_never_confident.
     query = "augmentin duo amoxycillin clavulanic tablets"
 
-    assert calibrator.decide([_match(0.95)], query)[0] == "confident"
-    assert calibrator.decide([_match(0.55)], query)[0] == "ambiguous"
-    assert calibrator.decide([_match(0.10)], query)[0] == "abstained"
+    amoxy = {"ingredient": "amoxycillin"}
+    assert calibrator.decide([_match(0.95, **amoxy)], query)[0] == "confident"
+    assert calibrator.decide([_match(0.55, **amoxy)], query)[0] == "ambiguous"
+    assert calibrator.decide([_match(0.10, **amoxy)], query)[0] == "abstained"
     assert calibrator.decide([], query)[0] == "abstained"
 
 
@@ -338,6 +345,49 @@ def test_discriminative_vocabulary_excludes_ubiquitous_words():
     assert len(vocabulary) > 500
 
 
+def test_an_answer_absent_from_the_query_is_never_confident():
+    """Regression test for a bug a user reported.
+
+    A photograph of a Crocin strip - PARACETAMOL FAST RELEASE TABLETS printed
+    plainly on the foil - was identified as `gelatin solutions`, closest
+    product GELOFUSINE SOLUTION, at 80% confidence. "gelatin" appears nowhere
+    on a Crocin strip.
+
+    The earlier gates cannot catch this. Boilerplate survives OCR in bulk - 133
+    tokens on a real strip - so lexical support is satisfied many times over,
+    and char n-grams over 253,973 brand names always find something scoring
+    well. Thin evidence was never the problem; the problem is an answer with no
+    support in the text at all.
+    """
+    calibrator = Calibrator.unfitted()
+    calibrator.threshold = 0.5
+
+    packaging_text = (
+        "store below 30c protect from light keep out of reach of children "
+        "read the enclosed leaflet before use manufactured by"
+    )
+    status, _ = calibrator.decide(
+        [_match(0.95, ingredient="gelatin", name="Gelofusine Solution")],
+        packaging_text,
+    )
+    assert status == "ambiguous", "an answer absent from the query is not an identification"
+
+    # The same match IS confident once the query actually mentions it.
+    status, _ = calibrator.decide(
+        [_match(0.95, ingredient="gelatin", name="Gelofusine Solution")],
+        "gelatin solution 500ml infusion bharat serums",
+    )
+    assert status == "confident"
+
+    # And a brand read off the foil corroborates even when the composition
+    # line is unreadable, which is the common case for a worn strip.
+    status, _ = calibrator.decide(
+        [_match(0.95, ingredient="paracetamol", name="Crocin Advance Tablet")],
+        "crocin advance gsk consumer healthcare gurugram store below 30c",
+    )
+    assert status == "confident"
+
+
 def test_a_numeric_only_match_is_never_confident():
     """Regression test for a measured silent failure.
 
@@ -358,7 +408,9 @@ def test_a_numeric_only_match_is_never_confident():
     assert status == "ambiguous", "a match resting on numerals must not be confident"
 
     worded_query = "combiflam ibuprofen paracetamol tablets sanofi"
-    status, _ = calibrator.decide([_match(0.95), _match(0.20)], worded_query)
+    status, _ = calibrator.decide(
+        [_match(0.95, ingredient="ibuprofen"), _match(0.20)], worded_query
+    )
     assert status == "confident"
 
 

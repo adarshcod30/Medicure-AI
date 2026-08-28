@@ -117,6 +117,7 @@ FEATURE_NAMES = (
 
 _BRAND_VOCABULARY: set[str] | None = None
 _NON_BRAND_WORDS: set[str] | None = None
+_INGREDIENT_VOCABULARY: set[str] | None = None
 
 DOSAGE_FORM_WORDS = frozenset({
     "tablet", "tablets", "capsule", "capsules", "syrup", "injection", "cream",
@@ -177,7 +178,12 @@ def brand_token_coverage(query: str) -> float:
     words = _brand_words(query)
     if not words:
         return 0.5
+    vocabulary = _brand_vocabulary()
+    return sum(word in vocabulary for word in words) / len(words)
 
+
+def _brand_vocabulary() -> set[str]:
+    """Every word of four or more letters appearing in any catalogue brand name."""
     global _BRAND_VOCABULARY
     if _BRAND_VOCABULARY is None:
         from .index import get_index
@@ -189,8 +195,91 @@ def brand_token_coverage(query: str) -> float:
                 if len(chunk) >= 4:
                     vocabulary.add(chunk)
         _BRAND_VOCABULARY = vocabulary
+    return _BRAND_VOCABULARY
 
-    return sum(word in _BRAND_VOCABULARY for word in words) / len(words)
+
+def _ingredient_vocabulary() -> set[str]:
+    """Words appearing in any canonical ingredient name.
+
+    Separate from _NON_BRAND_WORDS, which mixes ingredients with dosage forms.
+    "tablet" must not count as evidence of anything; "paracetamol" must.
+    """
+    global _INGREDIENT_VOCABULARY
+    if _INGREDIENT_VOCABULARY is None:
+        from .index import get_index
+
+        words: set[str] = set()
+        for signature in get_index()._signatures:  # noqa: SLF001
+            for component in signature or ():
+                for chunk in canonical_ingredient(str(component[0])).split():
+                    if len(chunk) >= 4:
+                        words.add(chunk)
+        _INGREDIENT_VOCABULARY = words
+    return _INGREDIENT_VOCABULARY
+
+
+def match_is_corroborated(match: CompositionMatch, query: str) -> bool:
+    """Does the ANSWER appear in the QUESTION?
+
+    Every other signal scores how well the query matched the catalogue. This
+    asks the reverse and much blunter question: is the composition being
+    reported actually written anywhere in the text we read? A confident answer
+    naming a drug whose name appears nowhere in the input is not an
+    identification, however good its cosine similarity.
+
+    The measured failure is the one a user reported. A photograph of a Crocin
+    strip -- PARACETAMOL FAST RELEASE TABLETS, printed plainly on the foil --
+    was identified as `gelatin solutions`, closest product GELOFUSINE SOLUTION,
+    at 80% confidence. The word "gelatin" appears nowhere on a Crocin strip.
+
+    Why the existing gates could not catch it. When the same text is read
+    cleanly the resolver ranks paracetamol 500mg first and is correct; the
+    failure needs an OCR pass that missed the ingredient line, leaving a bag of
+    packaging text. That bag is long -- 133 tokens survive boilerplate
+    filtering on a real strip -- so the lexical-support gate is satisfied many
+    times over, and char n-grams over 253,973 brand names always find something
+    scoring well. The problem is not that evidence was thin. It is that the
+    winning answer had no support in the text at all.
+
+    A weaker version of this check, "does any query token name something the
+    catalogue knows", was written first and measured: it leaked on 3 of 5
+    boilerplate strings, because with 253,973 brand names ordinary words like
+    `store`, `titanium` and `prevent` ARE brand tokens somewhere. Membership in
+    that vocabulary means almost nothing. Tying the check to the specific
+    answer being returned is what makes it discriminating.
+
+    Corroboration by EITHER an ingredient word or a word from the matched
+    brand's own name, because both are legitimate routes to an identification:
+    a strip whose composition line is readable but whose brand is worn off, and
+    a typed "Dolo 650" whose composition is never written down.
+    """
+    words = {w for w in re.split(r"[^a-z]+", normalize_text(query)) if len(w) >= 4}
+    if not words:
+        return False
+
+    for component in match.signature or ():
+        for chunk in canonical_ingredient(str(component[0])).split():
+            if len(chunk) >= 4 and chunk in words:
+                return True
+
+    # Brand names contain ordinary words, so the brand route needs the same
+    # boilerplate filter the OCR tokens get. Measured: "keep out of reach of
+    # children" corroborated `Dicaris Children Tablet` on the word `children`,
+    # which is printed on essentially every carton in the country.
+    from packages.perception.boilerplate import build_stopwords
+
+    # Three letters, not four, on the brand route only. Indian brand names are
+    # frequently that short -- "Pan 40 Tablet" regressed to ambiguous at a
+    # four-letter floor because `pan` was discarded and `pantoprazole` is not
+    # written on a typed query. The boilerplate list carries the risk that a
+    # short common word slips through.
+    ignore = build_stopwords() | DOSAGE_FORM_WORDS
+    brand = {
+        chunk
+        for chunk in re.split(r"[^a-z]+", normalize_text(getattr(match, "best_name", "") or ""))
+        if len(chunk) >= 3 and chunk not in ignore
+    }
+    return bool(brand & {w for w in re.split(r"[^a-z]+", normalize_text(query)) if len(w) >= 3})
 
 
 def extract_features(matches: list[CompositionMatch], query: str) -> np.ndarray:
@@ -455,6 +544,23 @@ class Calibrator:
                 self.lexical_support(query) < MIN_LEXICAL_SUPPORT
                 and brand_token_coverage(query) < BRAND_COVERAGE_FLOOR
             ):
+                return "ambiguous", min(probability, self.threshold * 0.9)
+
+            # The answer must appear in the question.
+            #
+            # The gate above asks whether a SHORT query is well supported. This
+            # asks whether the specific composition being returned is written
+            # anywhere in the text we actually read. A long query defeats the
+            # first gate completely — 133 tokens survive boilerplate filtering
+            # on a real strip — while still supporting a confident answer that
+            # names a drug absent from the image. See match_is_corroborated for
+            # the reported Crocin case.
+            #
+            # Downgraded to `ambiguous` rather than discarded, consistent with
+            # the gate above: the candidate is still shown with its
+            # probability, it is simply no longer presented as an
+            # identification.
+            if matches and not match_is_corroborated(matches[0], query):
                 return "ambiguous", min(probability, self.threshold * 0.9)
             return "confident", probability
         if matches and probability >= self.threshold * 0.5:
