@@ -24,6 +24,24 @@ COPY data/processed/ ./data/processed/
 
 RUN PYTHONPATH=/build python scripts/build_index.py --quiet
 
+# The calibrator is COPIED, not refitted. Without it the service starts,
+# reports "calibrator not fitted" on /v1/health, and every `probability` it
+# returns is a raw similarity wearing a probability's name — exactly the
+# failure calibrated abstention exists to prevent. The first Cloud Run deploy
+# shipped that way, with a confident paracetamol match reporting
+# calibrated=false.
+#
+# The obvious fix was `RUN fit_calibrator.py`, and it was wrong: fitting does
+# thousands of searches over 253,973 rows, which takes minutes on a laptop and
+# was still running after FIFTY on Cloud Build's single-vCPU worker. A trained
+# model belongs in the image as an artifact, not as a build step.
+#
+# The trade is that the calibrator is now only as current as the checked-in
+# file. It is fitted against index features, so changing normalize.py or the
+# catalogues invalidates BOTH (see NOTES.md) — rebuild the index and re-run
+# scripts/fit_calibrator.py locally, then rebuild the image.
+COPY data/artifacts/calibrator.joblib data/artifacts/calibration_report.json ./data/artifacts/
+
 # --- runtime ---
 FROM python:3.12-slim
 

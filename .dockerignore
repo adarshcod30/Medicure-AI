@@ -4,7 +4,9 @@ node_modules
 apps/web/node_modules
 apps/web/dist
 data/raw
-data/artifacts
+data/artifacts/*
+!data/artifacts/calibrator.joblib
+!data/artifacts/calibration_report.json
 __pycache__
 *.pyc
 .pytest_cache

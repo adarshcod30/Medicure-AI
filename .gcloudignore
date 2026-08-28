@@ -25,8 +25,27 @@ README.md
 # Large, derived, or not ours to redistribute. data/processed/*.csv IS
 # uploaded: scripts/build_index.py needs it at image-build time.
 data/raw/
-data/artifacts/
-data/processed/interactions/
+
+# The index is rebuilt inside the image, but the CALIBRATOR is shipped: fitting
+# it does thousands of index searches and took >50 minutes on Cloud Build's
+# single-vCPU worker. Two small files (85 KB) instead of a 50-minute build step.
+data/artifacts/*
+!data/artifacts/calibrator.joblib
+!data/artifacts/calibration_report.json
+
+# NOTE: data/processed/interactions/ is deliberately NOT excluded here, even
+# though .gitignore does exclude it. The two ignore files answer different
+# questions:
+#
+#   .gitignore    "should this 5.5 MB DDInter-derived table live in a public
+#                  repository?"  -> no, it is not ours to redistribute
+#   .gcloudignore "does the running service need it?"  -> yes, or the
+#                  interaction engine reports itself unavailable
+#
+# Excluding it here shipped a build where /v1/interactions/status returned
+# pairs=0 in production while working locally, because the local checkout had
+# the file and the image did not. The image cannot regenerate it either: that
+# needs data/raw/ddinter/, which is excluded and much larger.
 
 # Local junk
 __pycache__/
