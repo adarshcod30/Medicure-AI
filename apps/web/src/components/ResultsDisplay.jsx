@@ -335,7 +335,19 @@ export default function ResultsDisplay({ data }) {
           <strong style={{ fontSize: '0.9rem', letterSpacing: '0.01em' }}>{style.label}</strong>
         </div>
 
-        {id.composition && (
+        {/* The composition is a HEADLINE only when the system is actually
+            answering. Rendering it unconditionally was a real defect: a
+            crumpled Becosules strip abstained at 1% confidence and still put
+            "ibandronic acid 150mg" on screen at 1.35rem, directly under the
+            words "Not confident enough to say". Someone glancing at that sees
+            a drug name, not a refusal — which is precisely the confident-wrong
+            impression the abstention exists to prevent.
+
+            When abstaining, `id.reason` already names the closest match in a
+            sentence that frames it ("the closest match is X, but confidence is
+            only 1%"). That is the honest place for it: in context, at body
+            size, hedged. */}
+        {id.composition && answered && (
           <h2 style={{ margin: '0.6rem 0 0', fontSize: '1.35rem', color: '#0f172a' }}>
             {id.composition}
           </h2>

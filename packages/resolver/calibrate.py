@@ -454,7 +454,82 @@ def build_training_data(
         labels.append(0)
         queries.append(degenerate)
 
+    # --- negative control 3: products that are not in the catalogue ---
+    #
+    # The other two negatives are both LOW similarity and LOW query quality, so
+    # between them the calibrator learned "bad-looking query means bad answer".
+    # That leaves a hole exactly where this system gets used: a perfectly clear
+    # photo of a product the catalogue does not contain.
+    #
+    # Measured failure. The A-Z dataset is prescription pharmaceuticals; it has
+    # zero entries for Becosules, Revital, Zincovit, Supradyn, Shelcal, Liv 52
+    # or Dexorange, which are among the best-selling products in Indian
+    # pharmacies. A crumpled Becosules strip scored 0.63 against
+    # "methylcobalamin + pregabalin" and came back `ambiguous` at 52% -- an
+    # answer, naming a Schedule H nerve-pain drug, for a vitamin supplement.
+    # Four of ten such products were answered rather than abstained.
+    #
+    # A similarity floor was the obvious fix and was measured into the bin:
+    # in-catalogue queries corrupted by real OCR score 0.23-0.83, which sits on
+    # top of the 0.47-0.70 that out-of-catalogue products score. A floor at 0.70
+    # would have rejected 54% of correct answers.
+    #
+    # The separable signal is the COMBINATION the other negatives cannot
+    # express: query quality HIGH, similarity LOW. Long clean real words that
+    # match nothing well mean the product is absent, not that the photo is bad.
+    # The calibrator already extracts both feature families; it simply had no
+    # training example where they pointed in opposite directions.
+    roots = [_brand_root_tokens(index._columns["name"][r]) for r in rows]  # noqa: SLF001
+    syllables = sorted({s for root in roots for s in _syllables(root)})
+    existing = {index._columns["name"][i].lower() for i in range(len(index))}  # noqa: SLF001
+    forms = ["capsule", "capsules", "tablet", "tablets", "syrup", "drops", "cream", "spray"]
+
+    made = 0
+    attempts = 0
+    target = len(rows) // 4
+    while made < target and attempts < target * 20:
+        attempts += 1
+        if len(syllables) < 2:
+            break
+        invented = "".join(rng.choice(syllables) for _ in range(rng.randint(2, 3)))
+        if not (5 <= len(invented) <= 14):
+            continue
+        # Only keep names the catalogue genuinely does not contain, or the
+        # label would be a lie.
+        if any(invented in name for name in existing):
+            continue
+
+        query = f"{invented} {rng.choice(forms)}"
+        if rng.random() < 0.4:
+            query += f" {rng.randint(1, 20) * 25}mg"
+
+        matches = index.search_compositions(query, top_k=5)
+        features.append(extract_features(matches, query))
+        labels.append(0)
+        queries.append(query)
+        made += 1
+
     return np.vstack(features), np.asarray(labels), queries
+
+
+def _brand_root_tokens(name: str) -> str:
+    """First word of a product name, lowercased and stripped of non-letters."""
+    first = name.strip().split(" ")[0] if name.strip() else ""
+    return "".join(c for c in first.lower() if c.isalpha())
+
+
+def _syllables(root: str) -> list[str]:
+    """Two- and three-letter chunks, so invented names look pharmaceutical.
+
+    Sampling from real brand roots rather than from the alphabet is what makes
+    these read like drug names — "becosules", "zincovit" and "supradyn" are
+    plausible precisely because they are built from the same fragments the real
+    catalogue uses. Random letters produce the nonsense negative instead, which
+    the calibrator already handles.
+    """
+    if len(root) < 4:
+        return []
+    return [root[i : i + 3] for i in range(0, len(root) - 2, 3)]
 
 
 def fit(

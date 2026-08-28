@@ -46,6 +46,24 @@ DISCLAIMER = (
     "or doctor before taking, changing or stopping any medicine."
 )
 
+COVERAGE_CAVEAT = (
+    "Two things cause this: the photo may be too damaged to read, or the product "
+    "may not be in the catalogue at all. The catalogue covers prescription "
+    "medicines, and does NOT include most vitamins, supplements and OTC health "
+    "products — brands like Becosules, Revital, Zincovit and Shelcal are absent "
+    "entirely, so they can never be identified here no matter how clear the photo."
+)
+"""Said out loud on every abstention, because the alternative is worse.
+
+A crumpled Becosules strip abstained at 1% and reported only "confidence is too
+low", which reads as "try a better photo". No photo would have worked:
+`becosules` returns 0 of 253,973 brands. The A-Z dataset is prescription
+pharmaceuticals, and nutraceuticals were never in it.
+
+Telling someone to retake a photo that cannot succeed is a worse failure than
+saying "not in the database" — it wastes their time and implies the system is
+closer to an answer than it is."""
+
 
 @dataclass
 class Identification:
@@ -290,8 +308,7 @@ class Orchestrator:
         if not matches:
             identification.reason = (
                 "Nothing in the database of 253,973 Indian medicines matches this "
-                "closely enough to name. It may be a product that is not in the "
-                "dataset, or the text may have been misread."
+                "closely enough to name. " + COVERAGE_CAVEAT
             )
             return ScanResult(identification=identification, stages=stages)
 
@@ -303,9 +320,11 @@ class Orchestrator:
 
         if status == "abstained":
             identification.reason = (
-                f"The closest match is {best.label}, but confidence is only "
-                f"{probability:.0%} — below the threshold this system will answer at. "
-                "Rather than guess, please check with a pharmacist."
+                f"This could not be identified. The closest thing in the database is "
+                f"{best.label}, but at {probability:.0%} confidence that is far more "
+                "likely to be a coincidental text match than the right answer — so it "
+                "is not being offered as one. "
+                + COVERAGE_CAVEAT
             )
             return ScanResult(identification=identification, stages=stages)
 
