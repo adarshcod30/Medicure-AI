@@ -28,8 +28,6 @@ CANDIDATES=(
   "us.amazon.nova-micro-v1:0"
   "amazon.titan-text-premier-v1:0"
   "amazon.titan-text-express-v1"
-  "us.anthropic.claude-sonnet-4-6"
-  "us.anthropic.claude-haiku-4-5-20251001-v1:0"
   "us.meta.llama3-3-70b-instruct-v1:0"
   "mistral.mistral-large-2407-v1:0"
 )

@@ -22,7 +22,6 @@ build/
 # ── Editor and tooling (per-developer, machine-specific) ─────────────────
 .vscode/
 .idea/
-.claude/
 
 # ── OS ───────────────────────────────────────────────────────────────────
 .DS_Store
