@@ -49,3 +49,6 @@ data/processed/*.superseded-*
 # ── DIP stage dumps (--dump-stages output) ───────────────────────────────
 out/
 stages/
+
+# Local virtualenv
+.venv/

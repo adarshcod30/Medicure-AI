@@ -38,24 +38,35 @@ retrieval:
 
 | | MediCure | Raw LLM |
 |---|---|---|
-| Accuracy (answering everything) | **88.7%** | 86.7% |
-| Answered (coverage) | 82.7% | 95.3% |
-| Precision when it answers | **97.6%** | 90.9% |
-| Abstained | 17.3% | 4.7% |
-| **Silent failure — confidently wrong** | **0.0%** | **8.7%** |
-| Coverage at 95% precision | **90.7%** | 82.7% |
+| Accuracy (answering everything) | **88.7%** | 84.7% |
+| Answered (coverage) | 78.7% | 95.3% |
+| Precision when it answers | **99.2%** | 88.8% |
+| Abstained | 21.3% | 4.7% |
+| **Silent failure — confidently wrong** | **0.0%** | **10.7%** |
+| Coverage at 95% precision | **90.7%** | 77.3% |
 | Exact composition signature | 68.7% | n/a |
-| Median latency | **63 ms** | 727 ms |
+| Median latency | **62 ms** | 793 ms |
 
-**Zero silent failures against 8.7%** is the result. Accuracy is close — the
+**Zero silent failures against 10.7%** is the result. Accuracy is close — the
 model is good, and pretending otherwise would be dishonest — but it answers
-95.3% of the time and is confidently wrong on roughly one query in eleven, with
-no way for a patient to tell which. MediCure declines 17.3% of the time and is
-right on 97.6% of what it does answer.
+95.3% of the time and is confidently wrong on roughly one query in nine, with
+no way for a patient to tell which. MediCure declines 21.3% of the time and is
+right on 99.2% of what it does answer.
+
+**What that zero does and does not mean.** It is measured on synthetically
+corrupted text, not on photographs. A user reported a real failure this
+benchmark cannot see: a photographed Crocin strip, PARACETAMOL printed on the
+foil, identified as `gelatin solutions` at 80% confidence. Read cleanly the
+same text resolves correctly, so the failure needed an OCR pass that missed the
+ingredient line and left packaging boilerplate behind. The gate added in
+response requires a match's own composition or brand name to appear in the
+query before it may be called confident (`match_is_corroborated`), and the
+regression test pins it. But the honest claim is "zero on this benchmark",
+not "zero in the field".
 
 Two things stated plainly:
 
-- **The LLM's ECE is better** (0.096 against 0.183). MediCure's is measured
+- **The LLM's ECE is better** (0.118 against 0.287). MediCure's is measured
   against the shared overlap rule while its calibrator was fitted to predict
   *exact signature* correctness, so the two are not measuring the same event.
   The calibration report has the figure against what it was actually trained on.
@@ -91,15 +102,18 @@ on a curved tin:
 | | Phone photos | Web product shots |
 |---|---|---|
 | Images | 12 | 16 |
-| Ingredient hit @1 | **8 / 12 (67%)** | **12 / 16 (75%)** |
-| Answered | 9 / 12 | 8 / 16 |
+| Ingredient hit @1 | **8 / 12 (67%)** | **11 / 16 (69%)** |
+| Answered | 10 / 12 | 9 / 16 |
 | **Silent failure** | **0 / 12** | **0 / 16** |
-| Orientation corrected | 6 / 12 | 1 / 16 |
-| Vision transcription used | 7 / 12 | 13 / 16 |
-| Seconds per image | 7.0 | 7.0 |
+| Vision transcription used | 10 / 12 | 14 / 16 |
+| Seconds per image | 5.1 | 5.1 |
 
-Vision transcription (Nova Pro, `--vision`) is what moved these: 13/27 to
-**19/27** overall, with silent failure still at zero. The discipline in its
+Vision transcription (Nova Pro, `--vision`) is what moved these: 13/28 to
+**19/28** overall, with silent failure still at zero on this set.
+
+Read that zero with the caveat above, and with one more: the vision path
+samples, so these numbers move on their own. The same 28 images have scored
+19, 20 and 21 across identical runs. A change worth ±1 here is not a result. The discipline in its
 output is the interesting part — it returns `NostrosiI` with the OCR-style
 capital-I typo *uncorrected*, and `stro-resistant` as the visible tail of
 "gastro-resistant" *without completing it*. The model could trivially have
@@ -134,8 +148,18 @@ the correct response.
 
 Publishing both numbers is the point. A synthetic benchmark alone would have
 reported 74% and been wrong about the system's real behaviour by a factor of
-five. `python -m eval.bench_real_images` reproduces it — labels come free from
-retail captions (see below), so no manual transcription is involved.
+five.
+
+`python -m eval.bench_real_images` **cannot currently reproduce this.** Its
+corpus lived in `data/raw/gimages`, which is gitignored and was therefore never
+committed; it no longer exists on disk. The script needs `<dir>/harvest.tsv`
+and `<dir>/images`, and the surviving photo sets are unlabelled, so they cannot
+stand in. `eval/results/real_images.json` is kept, and marked stale in its own
+`_provenance` block, as a record of what was run rather than a current result.
+Reproducing it means re-harvesting retail listings — the labelling trick
+(captions as free labels, described below) still works; only the images are
+gone. For figures that do reproduce today, use `eval/results/photos.json` via
+`python -m eval.bench_photos --orchestrator`.
 
 ---
 
@@ -194,10 +218,16 @@ abstention all work; only the natural-language explanation is omitted.
 <summary>Running without Docker</summary>
 
 ```bash
-conda create -n medicure-ai python=3.12 -y && conda activate medicure-ai
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 brew install tesseract          # or: apt-get install tesseract-ocr
 ```
+
+`tesseract` must be on PATH as a binary, not only as the `pytesseract` wrapper:
+without it the orientation probes return no scores and `tests/test_dip.py`
+fails in a way that looks like a code fault. Conda works equally well
+(`conda create -n medicure-ai python=3.12`); the venv is spelled out because
+`.venv/` is what `.gitignore` expects.
 
 ```bash
 python scripts/build_index.py && python scripts/fit_calibrator.py
@@ -336,7 +366,8 @@ contains the failure modes. `eval/bench_ocr.py` is written and waiting.
 pytest -q
 ```
 
-104 tests. The valuable ones warp an image by a known homography and assert
+200 tests, and they need the environment above — every dependency, plus the
+tesseract binary. The valuable ones warp an image by a known homography and assert
 recovery, re-measure deskew output to catch a sign error that would silently
 double the rotation, and assert that a composition signature is neither too
 permissive (recommending a different drug) nor too strict (never finding the
