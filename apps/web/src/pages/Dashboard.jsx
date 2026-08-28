@@ -179,23 +179,19 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Step 2: Results & Chat (Side-by-side on desktop) */}
+        {/* Step 2: results, then the chat, each spanning the full page width.
+            This was a two-column grid, which split the 1100px page in half and
+            left the findings - compositions, prices, alternatives, interaction
+            warnings - in a column narrow enough to wrap a drug name across
+            three lines. The page container already centres itself with equal
+            margins, so spanning it is what gives the results their width. */}
         {result && !loading && (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-            gap: '2rem',
-            alignItems: 'start' 
-          }}>
-            {/* Left: Structured Data */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <section className="card">
               <ResultsDisplay data={result} />
             </section>
 
-            {/* Right: Chatbot. The heading alone used to live here, so this
-                column rendered empty and half the screen went to waste while
-                the results were squeezed into the other half. */}
-            <section className="card" style={{ position: 'sticky', top: '100px' }}>
+            <section className="card">
               <h3 style={{ marginBottom: '1rem' }}>{t.follow_up_title}</h3>
               <AskAboutMedicine result={result} />
             </section>
