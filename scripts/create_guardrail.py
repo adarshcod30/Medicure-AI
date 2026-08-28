@@ -62,6 +62,23 @@ renderings start dying. The three that still fail — 0.28, 0.27, 0.17 — are
 outputs where the model padded a thin multi-ingredient fact sheet with its own
 pharmacological knowledge, which is precisely what should be blocked.
 
+RE-MEASURED after the fact sheet gained its uses, side-effect and caveat
+sections. Same 10 products, same settings:
+
+    0.99  0.99  0.99  0.99  0.98  0.98  0.96  0.58  |  0.25  0.17
+
+Every score that clears the bar moved up, seven of them to 0.96 or better,
+and 8/10 now pass at 0.50 where 7 did before. The cause is the same effect
+found while building the chatbot: content the answer needs must EXIST in the
+source. Widening the fact sheet did not make the model more careful — it made
+the sentences the model was already writing traceable.
+
+The gap 0.50 was chosen for has moved (now 0.58 to 0.96) and widened, so 0.50
+is no longer centred in it, but it stays: it passes strictly more legitimate
+explanations than any higher value, and the two it still blocks (0.25, 0.17)
+are the same padded multi-ingredient outputs as before. Raising it to sit in
+the new gap would buy nothing except the loss of the 0.58 explanation.
+
 The tension is real and worth naming: this explainer is *asked* to paraphrase
 ("painkiller" not "analgesic"), and paraphrase scores lower than quotation on
 contextual grounding. A stricter threshold does not buy more safety here, it

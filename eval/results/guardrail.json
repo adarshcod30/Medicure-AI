@@ -5,80 +5,80 @@
     {
       "drug": "Crocin Advance Tablet",
       "identification": "confident",
-      "grounding": 0.61,
+      "grounding": 0.96,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Augmentin 625 Duo Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.21,
+      "identification": "confident",
+      "grounding": 0.99,
       "relevance": 1.0,
-      "stop_reason": "guardrail_intervened"
+      "stop_reason": "end_turn"
     },
     {
       "drug": "Ecosprin 75 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.58,
+      "identification": "confident",
+      "grounding": 0.99,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Dolo 650 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.84,
+      "identification": "confident",
+      "grounding": 0.58,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Pan 40 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.78,
+      "identification": "confident",
+      "grounding": 0.17,
       "relevance": 1.0,
-      "stop_reason": "end_turn"
+      "stop_reason": "guardrail_intervened"
     },
     {
       "drug": "Azithral 500 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.79,
+      "identification": "confident",
+      "grounding": 0.99,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Montair LC Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.22,
+      "identification": "confident",
+      "grounding": 0.98,
       "relevance": 1.0,
-      "stop_reason": "guardrail_intervened"
+      "stop_reason": "end_turn"
     },
     {
       "drug": "Zerodol SP Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.61,
+      "identification": "confident",
+      "grounding": 0.98,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Telma 40 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.68,
+      "identification": "confident",
+      "grounding": 0.99,
       "relevance": 1.0,
       "stop_reason": "end_turn"
     },
     {
       "drug": "Glycomet 500 Tablet",
-      "identification": "ambiguous",
-      "grounding": 0.3,
+      "identification": "confident",
+      "grounding": 0.25,
       "relevance": 1.0,
       "stop_reason": "guardrail_intervened"
     }
   ],
   "pass_rate": {
     "0.3": 0.8,
-    "0.4": 0.7,
-    "0.5": 0.7,
-    "0.6": 0.6,
-    "0.7": 0.3,
-    "0.8": 0.1
+    "0.4": 0.8,
+    "0.5": 0.8,
+    "0.6": 0.7,
+    "0.7": 0.7,
+    "0.8": 0.7
   }
 }
