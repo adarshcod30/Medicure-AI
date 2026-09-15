@@ -51,3 +51,7 @@ stages/
 
 # Local virtualenv
 .venv/
+
+# secrets, build output and local noise
+.env.local
+*.log
